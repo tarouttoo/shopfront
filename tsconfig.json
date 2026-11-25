@@ -1,0 +1,11 @@
+{
+  "extends": "astro/tsconfigs/strict",
+  "compilerOptions": {
+    "types": ["node"],
+    "noUncheckedIndexedAccess": true,
+    "noEmit": true,
+    "skipLibCheck": true
+  },
+  "include": [".astro/types.d.ts", "src/**/*.ts", "src/**/*.tsx", ".sandcastle/**/*.ts", "*.config.ts"],
+  "exclude": ["dist", "node_modules"]
+}

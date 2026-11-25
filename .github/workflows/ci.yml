@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A newer push/PR run on the same ref supersedes the queued one.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    # Ported from robostudio's CI without the windows matrix leg:
+    # that leg existed for the Electron app; this repo is a static
+    # site with POSIX-only pipeline tests (ADR 0020).
+    name: lint + typecheck + test + build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      # The pipeline suites (.sandcastle) stub `gh` with POSIX bash
+      # scripts; the product suites cover the cart reducer and catalog
+      # data contract.
+      - name: Test (app + agent workflows)
+        run: npm test
+
+      # Exercise the static build path so a broken build fails the PR
+      # instead of surfacing at deploy time.
+      - name: Build
+        run: npm run build

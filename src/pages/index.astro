@@ -1,0 +1,61 @@
+---
+import Base from "../layouts/Base.astro";
+import { withBase } from "../lib/urls";
+
+const steps = [
+  {
+    title: "Выберите позиции",
+    text: "Каталог с характеристиками — соберите нужное в корзину.",
+  },
+  {
+    title: "Оформите заявку",
+    text: "Одна форма: контакты и состав заявки. Без регистрации.",
+  },
+  {
+    title: "Получите счёт",
+    text: "Мы отвечаем по заявке и выставляем счёт или КП. Оплата после согласования.",
+  },
+];
+---
+
+<Base title="Витрина — каталог оборудования">
+  <section class="mx-auto max-w-5xl px-4 pt-16 pb-12 text-center">
+    <p class="text-sm font-medium tracking-wide text-indigo-600 uppercase">Каталог оборудования</p>
+    <h1 class="mt-3 text-4xl font-bold tracking-tight">Оборудование и щиты — цены по запросу</h1>
+    <p class="mx-auto mt-4 max-w-2xl text-slate-600">
+      B2B-витрина: характеристики по каждой позиции, корзина собирает заявку, счёт — в один
+      клик. Без розничной корзины и онлайн-оплаты — как принято в B2B.
+    </p>
+    <div class="mt-8 flex items-center justify-center gap-3">
+      <a
+        href={withBase("catalog/")}
+        class="rounded-md bg-indigo-600 px-6 py-3 text-sm font-medium text-white hover:bg-indigo-500"
+      >
+        Открыть каталог
+      </a>
+      <a
+        href={withBase("order/")}
+        class="rounded-md border border-slate-300 bg-white px-6 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
+      >
+        Моя заявка
+      </a>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-5xl px-4 pb-20">
+    <h2 class="text-center text-2xl font-semibold">Как заказать</h2>
+    <div class="mt-8 grid gap-6 sm:grid-cols-3">
+      {
+        steps.map((step, index) => (
+          <div class="rounded-xl border border-slate-200 bg-white p-6">
+            <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-indigo-50 text-sm font-semibold text-indigo-600">
+              {index + 1}
+            </span>
+            <h3 class="mt-3 font-semibold">{step.title}</h3>
+            <p class="mt-1 text-sm text-slate-600">{step.text}</p>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+</Base>
