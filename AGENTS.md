@@ -1,8 +1,9 @@
 # AGENTS.md
 
 shopfront is a B2B shopfront — public catalog, cart, order request — for
-a client under a codename, built as a static Astro site and evolved by
-the agent factory ported from robostudio (ADR `0020`). Humans and coding
+ООО ИТЦ «Альтер Энерго», built as a static Astro site and evolved by
+the agent factory ported from robostudio (ADR `0020`; the client's
+identity is public since ADR `0022`). Humans and coding
 agents edit both the product and the factory.
 
 ## Navigation
@@ -26,10 +27,10 @@ agents edit both the product and the factory.
 
 ## Constraints
 
-- **Codename rule** — this repo is public. Until the client approves the
-  project, the client's real name, brand names, and real product names
-  appear nowhere: not in code, docs, commit messages, or issues (ADR
-  `0020`). Issues and PRs are readable by anyone.
+- **Client identity is public** — the Client is named in the repo and
+  the deployed site is public and indexable (ADR `0022`, amending
+  `0020`). Issues and PRs are readable by anyone, including the Client;
+  write them accordingly.
 - Non-trivial changes ride the pipeline: publish a Spec issue first,
   break it into child Tickets, and let the `agent:*` label flow implement
   and review them. Direct one-shot edits in the working tree are the

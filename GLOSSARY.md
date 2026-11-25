@@ -6,13 +6,17 @@ in either language. Implementation details live in `docs/adr/` and code,
 not here.
 
 - **Shopfront (Витрина)** — the public catalog site: the whole app.
-  Until the client approves the project publicly, it exists under the
-  codename `shopfront` and the client is never named (ADR `0020`).
-- **Client (Заказчик)** — the company owning the Shopfront. Until public
-  approval, referred to only as «Заказчик» — no real or brand names
-  anywhere in the repo (ADR `0020`).
+- **Client (Заказчик)** — the company owning the Shopfront: ООО ИТЦ
+  «Альтер Энерго» (ADR `0022`).
 - **Catalog (Каталог)** — the set of Products the Shopfront offers,
   rendered at build time from data (ADR `0021`).
+- **Category (Категория)** — a named grouping of Products; the Catalog
+  has one page per Category (Насосы, Котлы, Горелки, Автоматика).
+- **Services (Услуги)** — the works the Client performs
+  (проектирование, монтаж и ПНР, автоматизация, сервис): content pages,
+  never Products and never orderable. «Решения под ключ» is only the
+  approved landing label linking to the Services page, not a term —
+  avoid «Решения» as a word for this concept.
 - **Product (Товар)** — one catalog position: SKU, name, Specs, and
   «Цена по запросу». Products carry no prices on the site.
 - **SKU (Артикул)** — the Product's code; the identity used by the Cart

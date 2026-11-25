@@ -1,13 +1,14 @@
 # shopfront
 
 A B2B shopfront — public catalog, cart, order request — built and evolved
-by the agent factory ported from `robostudio`. The client is under a
-codename until the project is approved publicly (ADR `0020`); product
-shape is settled in ADR `0021`.
+by the agent factory ported from `robostudio`, for ООО ИТЦ «Альтер
+Энерго». The client's identity is public and the deployed site is
+indexable (ADR `0022`, amending the codename rule of ADR `0020`);
+product shape is settled in ADR `0021`.
 
 Stack: Astro + React islands + Tailwind CSS, fully static, deployed to
-GitHub Pages with `noindex` until approval (ADR `0021`). UI text is
-Russian per `GLOSSARY.md`; code and docs are English.
+GitHub Pages (ADR `0021`). UI text is Russian per `GLOSSARY.md`; code
+and docs are English.
 
 ## Development
 
@@ -72,9 +73,11 @@ repos/tarouttoo/shopfront/actions/runs/<run-id>/approve`.
   labels, with no upstream counterpart.
 - The B2B shape and the static Astro stack are ADR `0021`; CMS and
   Order Request intake are deliberate non-decisions, wayfinder territory.
+- ADR `0022` lifts the codename rule and the until-approval gates
+  (noindex, placeholder products): the Client is named and the site is
+  public and indexable.
 
 ## Status
 
-Draft until the client approves. The deployed preview is `noindex`ed and
-contains only neutral placeholder Products — no real company, brand, or
-product names (ADR `0020`, `0021`).
+Live preview on GitHub Pages; content integration of the approved
+landing and catalog is tracked in the issue tracker.
