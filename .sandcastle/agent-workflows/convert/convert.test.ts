@@ -190,6 +190,9 @@ describe("convert.ts", () => {
       env: {
         EVENT_ACTION: "labeled",
         ISSUE_NUMBER: "12",
+        // Hermetic: pin to empty so a real AGENT_PAT in the outer
+        // environment cannot leak through process.env into the child.
+        AGENT_PAT: "",
         STUB_BLOCKED_BY: "[]",
       },
       issues: { 12: { state: "open", labels: ["ready-for-agent"] } },
