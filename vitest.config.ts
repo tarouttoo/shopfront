@@ -12,5 +12,8 @@ export default defineConfig({
     environment: "node",
     include: ["src/**/*.test.{ts,tsx}", ".sandcastle/**/*.test.ts", "docs/**/*.test.ts"],
     testTimeout: 30_000,
+    // Built-output suites (order FAQ, base layout) each exec `astro build`
+    // into the same dist/ — concurrent builds corrupt it mid-prerender.
+    fileParallelism: false,
   },
 });
