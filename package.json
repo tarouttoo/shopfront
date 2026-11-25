@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "catalog:build": "tsx scripts/build-catalog.ts",
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
