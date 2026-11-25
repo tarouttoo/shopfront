@@ -2,7 +2,6 @@
 import Base from "../layouts/Base.astro";
 import ProductCard from "../components/ProductCard.astro";
 import FilterIsland from "../components/FilterIsland";
-import CartButtons from "../components/CartButtons";
 import { PRODUCTS } from "../lib/catalog";
 ---
 
@@ -23,7 +22,7 @@ import { PRODUCTS } from "../lib/catalog";
     <div class="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {PRODUCTS.map((product) => <ProductCard product={product} />)}
     </div>
+    <!-- The Cart button lives in the base layout header now; the add
+         clicks here are delegated by the header island (CartButtons). -->
   </section>
-
-  <CartButtons client:only="react" />
 </Base>
