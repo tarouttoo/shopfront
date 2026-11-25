@@ -1,0 +1,37 @@
+---
+/**
+ * The approved source's scroll-to-top button (page furniture of the
+ * category pages in `reference/project-B/nasosy.html` and the cart
+ * script): a fixed round primary button that appears after 300px of
+ * scroll and glides back to the top. Static markup + a tiny script —
+ * no island needed.
+ */
+---
+<button
+  id="scroll-top"
+  type="button"
+  title="Наверх"
+  aria-label="Наверх"
+  data-show="false"
+  class="fixed right-5 bottom-6 z-[1100] h-[46px] w-[46px] cursor-pointer items-center justify-center rounded-full border-none bg-primary text-white shadow-[0_6px_18px_rgba(13,71,161,0.25)] transition-transform duration-200 hover:-translate-y-0.5 hover:bg-primary-dark data-[show=true]:flex data-[show=false]:hidden"
+>
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2.5"
+    aria-hidden="true"
+    class="h-5 w-5"
+  >
+    <polyline points="6 14 12 8 18 14"></polyline>
+  </svg>
+</button>
+<script>
+  const button = document.getElementById("scroll-top");
+  if (button) {
+    const sync = () => button.setAttribute("data-show", String(window.scrollY > 300));
+    window.addEventListener("scroll", sync, { passive: true });
+    button.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+    sync();
+  }
+</script>
