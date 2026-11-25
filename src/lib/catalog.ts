@@ -19,13 +19,19 @@ export interface Product {
   specs: Spec[];
 }
 
-export type CategoryId = "blocks" | "cabinets" | "modules" | "kits";
+/**
+ * The four GLOSSARY categories, one page per Category (Насосы, Котлы,
+ * Горелки, Автоматика). Only Насосы carries Products so far (Spec #4:
+ * the approved automatika position is junk and stays out) — the empty
+ * categories exist so their pages and filters resolve.
+ */
+export type CategoryId = "nasosy" | "kotly" | "gorelki" | "avtomatika";
 
 export const CATEGORIES: ReadonlyArray<{ id: CategoryId; label: string }> = [
-  { id: "blocks", label: "Блоки" },
-  { id: "cabinets", label: "Шкафы" },
-  { id: "modules", label: "Модули" },
-  { id: "kits", label: "Комплекты" },
+  { id: "nasosy", label: "Насосы" },
+  { id: "kotly", label: "Котлы" },
+  { id: "gorelki", label: "Горелки" },
+  { id: "avtomatika", label: "Автоматика" },
 ];
 
 export function categoryLabel(id: CategoryId): string {

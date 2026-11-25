@@ -78,13 +78,13 @@ describe("resolveCart", () => {
   it("drops lines whose SKU is not in the Catalog", () => {
     const cart: Cart = {
       lines: [
-        { sku: "A-01", qty: 2 },
+        { sku: "1", qty: 2 },
         { sku: "УСТАРЕВШИЙ", qty: 1 },
       ],
     };
     const resolved = resolveCart(cart, PRODUCTS);
-    expect(resolved.map((line) => line.sku)).toEqual(["A-01"]);
-    expect(resolved[0]?.product.name).toBe("Блок А-01");
+    expect(resolved.map((line) => line.sku)).toEqual(["1"]);
+    expect(resolved[0]?.product.name).toBe("BM 1-2A A-D-E-HQQE");
   });
 });
 
