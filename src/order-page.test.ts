@@ -56,4 +56,46 @@ describe("order page FAQ (built static output)", () => {
     const faqBlock = html.slice(faqStart, faqEnd);
     expect(faqBlock).not.toMatch(/заказ|оплата на сайте/);
   });
+
+  it("carries no payment UI anywhere in the page shell", () => {
+    // ADR 0021: no online payment. The checkout select («Способ
+    // оплаты» / «Оплата картой» / безнал) and its hints must not
+    // reappear on the Order Request page.
+    expect(html).not.toMatch(/Способ оплаты|Оплата картой|Банковская карта|yoomoney/i);
+  });
+});
+
+/**
+ * The form itself is a client:only island, so it is invisible to the
+ * built HTML above. Its wording is pinned at the source level instead:
+ * glossary vocabulary (Заявка, never «заказ») and ADR 0021 (no payment
+ * wording in the flow).
+ */
+describe("order form island (component source)", () => {
+  const form = readFileSync(new URL("./components/OrderForm.tsx", import.meta.url), "utf8");
+
+  it("speaks glossary vocabulary: заявка, never «заказ»", () => {
+    expect(form).not.toMatch(/заказ/i);
+    expect(form).toContain("Состав заявки");
+    expect(form).toContain("Подтвердить заявку");
+    expect(form).toContain("Пожелания к заявке");
+  });
+
+  it("stays payment-free (ADR 0021)", () => {
+    expect(form).not.toMatch(/оплат/i);
+  });
+
+  it("mirrors the source field set, consent text and success screen", () => {
+    expect(form).toContain("Тип покупателя");
+    expect(form).toContain("ФИО");
+    expect(form).toContain("Контактное лицо");
+    expect(form).toContain("Название организации");
+    expect(form).toContain("ИНН");
+    expect(form).toContain("Телефон");
+    expect(form).toContain("Email");
+    expect(form).toContain("Комментарий");
+    expect(form).toContain("политикой конфиденциальности");
+    expect(form).toContain("Заявка отправлена менеджеру");
+    expect(form).toContain("Заявка принята");
+  });
 });
