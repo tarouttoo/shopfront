@@ -42,15 +42,18 @@ describe("order page FAQ (built static output)", () => {
   });
 
   it("sits below the form section", () => {
-    expect(html.indexOf("Частые вопросы")).toBeGreaterThan(
-      html.indexOf("Оформление заявки"),
-    );
+    const formHeading = html.indexOf("Оформление заявки");
+    const faqHeading = html.indexOf("Частые вопросы");
+    expect(formHeading).toBeGreaterThan(-1);
+    expect(faqHeading).toBeGreaterThan(formHeading);
   });
 
   it("keeps banned wording («заказ», «оплата на сайте») out of the FAQ block", () => {
     const faqStart = html.indexOf('id="faq"');
+    const faqEnd = html.indexOf("</section>", faqStart);
     expect(faqStart).toBeGreaterThan(-1);
-    const faqBlock = html.slice(faqStart, html.indexOf("</section>", faqStart));
+    expect(faqEnd).toBeGreaterThan(faqStart);
+    const faqBlock = html.slice(faqStart, faqEnd);
     expect(faqBlock).not.toMatch(/заказ|оплата на сайте/);
   });
 });
