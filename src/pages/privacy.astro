@@ -1,0 +1,133 @@
+---
+import Base from "../layouts/Base.astro";
+import ScrollTop from "../components/ScrollTop.astro";
+import { SITE } from "../data/site";
+
+/**
+ * The Privacy policy page (Spec #4, T5), ported from the approved source
+ * `reference/project-B/privacy.html`: white content card on the mist
+ * background, sections 1–6, date line. Identity strings (operator name,
+ * domain, email, phone, address) are read from src/data/site.ts — the
+ * source's «Вернуться на сайт» mini-header is replaced by the approved
+ * site frame (T1) and its floating «наверх» button by the shared
+ * ScrollTop. The body text carries no «заказ» wording (it appears only
+ * in the source's unported cart-reopen script), so nothing to adapt.
+ */
+---
+
+<Base title="Политика конфиденциальности — ИТЦ Альтер Энерго">
+  <div class="bg-mist py-10 max-md:py-5">
+    <div class="mx-auto max-w-[800px] px-5">
+      <div class="rounded-xl bg-white p-[50px] leading-[1.7] shadow-card max-md:p-[30px] max-md:px-5">
+        <h1 class="mb-[30px] text-[2rem] leading-tight font-bold text-primary max-md:text-[1.6rem]">
+          Политика конфиденциальности
+        </h1>
+
+        <p class="mb-[15px] text-ink-light">
+          Настоящая Политика конфиденциальности персональных данных (далее —
+          Политика) действует в отношении всей информации, которую {SITE.name} (далее —
+          Оператор) может получить о Пользователе во время
+          использования сайта <strong>{SITE.domain}</strong>.
+        </p>
+
+        <h2 class="mt-[30px] mb-[15px] text-[1.3rem] font-bold text-ink">
+          1. Общие положения
+        </h2>
+        <p class="mb-[15px] text-ink-light">
+          1.1. Использование сайта означает согласие Пользователя с настоящей
+          Политикой и условиями обработки его персональных данных.
+        </p>
+        <p class="mb-[15px] text-ink-light">
+          1.2. В случае несогласия с условиями Политики Пользователь должен
+          прекратить использование сайта.
+        </p>
+
+        <h2 class="mt-[30px] mb-[15px] text-[1.3rem] font-bold text-ink">
+          2. Какие данные мы собираем
+        </h2>
+        <p class="mb-[15px] text-ink-light">
+          2.1. Оператор собирает только те данные, которые Пользователь
+          добровольно вводит в форму обратной связи:
+        </p>
+        <ul class="mb-[15px] ml-5 list-disc text-ink-light">
+          <li class="mb-2">Имя (или как к вам обращаться);</li>
+          <li class="mb-2">Номер контактного телефона;</li>
+          <li class="mb-2">Адрес электронной почты (при наличии);</li>
+          <li class="mb-2">Текст сообщения с описанием задачи.</li>
+        </ul>
+        <p class="mb-[15px] text-ink-light">
+          2.2. Сайт не использует сторонние скрипты для скрытого сбора данных
+          (трекеры, куки-файлы для отслеживания поведения сторонними
+          сервисами).
+        </p>
+
+        <h2 class="mt-[30px] mb-[15px] text-[1.3rem] font-bold text-ink">
+          3. Цели сбора персональных данных
+        </h2>
+        <p class="mb-[15px] text-ink-light">
+          3.1. Персональные данные Пользователя собираются исключительно для:
+        </p>
+        <ul class="mb-[15px] ml-5 list-disc text-ink-light">
+          <li class="mb-2">
+            Обратной связи с Пользователем (ответ на заявку, звонок,
+            консультация);
+          </li>
+          <li class="mb-2">
+            Подготовки коммерческого предложения или расчета стоимости работ;
+          </li>
+          <li class="mb-2">Заключения и исполнения договоров на оказание услуг.</li>
+        </ul>
+
+        <h2 class="mt-[30px] mb-[15px] text-[1.3rem] font-bold text-ink">
+          4. Как мы защищаем ваши данные
+        </h2>
+        <p class="mb-[15px] text-ink-light">
+          4.1. Оператор принимает необходимые организационные и технические
+          меры для защиты персональной информации Пользователя от
+          неправомерного или случайного доступа, уничтожения, изменения,
+          блокирования, копирования и распространения.
+        </p>
+        <p class="mb-[15px] text-ink-light">
+          4.2. Данные из формы передаются на почту Оператора по защищенному
+          протоколу (HTTPS) через сервис Web3Forms. Оператор <strong>не продает, не
+          передает и не раскрывает</strong> персональные данные третьим лицам.
+        </p>
+
+        <h2 class="mt-[30px] mb-[15px] text-[1.3rem] font-bold text-ink">
+          5. Права Пользователя
+        </h2>
+        <p class="mb-[15px] text-ink-light">
+          5.1. Пользователь имеет право отозвать свое согласие на обработку
+          персональных данных в любой момент, направив письменное уведомление на
+          адрес электронной почты <a href={`mailto:${SITE.email}`} class="text-primary">{SITE.email}</a>.
+        </p>
+        <p class="mb-[15px] text-ink-light">
+          5.2. При отзыве согласия Оператор прекращает обработку данных и
+          уничтожает их в течение 30 дней, если иное не предусмотрено
+          законодательством РФ.
+        </p>
+
+        <h2 class="mt-[30px] mb-[15px] text-[1.3rem] font-bold text-ink">
+          6. Контакты
+        </h2>
+        <p class="mb-[15px] text-ink-light">
+          По всем вопросам, связанным с обработкой персональных данных, вы
+          можете связаться с нами:
+        </p>
+        <ul class="mb-[15px] ml-5 list-disc text-ink-light">
+          <li class="mb-2">
+            Email: <a href={`mailto:${SITE.email}`} class="text-primary">{SITE.email}</a>
+          </li>
+          <li class="mb-2">Телефон: {SITE.phones[0].display}</li>
+          <li class="mb-2">Адрес: {SITE.address}</li>
+        </ul>
+
+        <p class="mt-10 mb-0 text-center text-[0.9rem] text-ink-light">
+          Дата последнего обновления: 2026 год.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <ScrollTop />
+</Base>
