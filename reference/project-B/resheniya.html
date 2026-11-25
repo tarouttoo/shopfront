@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Решения под ключ — ООО ИТЦ «Альтер Энерго»</title>
+  <meta name="theme-color" content="#0d47a1" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230d47a1'/%3E%3Ctext x='32' y='43' font-family='Arial' font-size='24' font-weight='bold' fill='%23fff' text-anchor='middle'%3EAE%3C/text%3E%3C/svg%3E" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --primary: #0d47a1; --primary-dark: #002171; --accent: #00acc1;
+      --text: #1a1a2e; --text-light: #5a5a7a; --bg: #f5f7fa;
+      --white: #ffffff; --gray: #e8ecf1; --radius: 14px;
+      --shadow: 0 4px 20px rgba(13,71,161,0.08);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; color: var(--text); background: var(--bg); line-height: 1.6; }
+    a { text-decoration: none; color: inherit; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+
+    header {
+      background: var(--white); box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+      position: sticky; top: 0; z-index: 100; padding: 14px 0;
+    }
+    .header-inner { display: flex; justify-content: space-between; align-items: center; }
+    .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; color: var(--primary); font-size: 1.15rem; }
+    .logo-icon {
+      width: 40px; height: 40px; background: linear-gradient(135deg, var(--primary), var(--accent));
+      border-radius: 10px; display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 800; font-size: 16px;
+    }
+    .back-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 14px;
+      color: var(--primary); background: rgba(13,71,161,0.06); transition: all 0.2s;
+    }
+    .back-btn:hover { background: var(--primary); color: #fff; }
+    .back-btn svg { width: 18px; height: 18px; }
+
+    .page-hero {
+      background: var(--primary); color: #fff; padding: 50px 0 40px;
+    }
+    .page-hero h1 { font-size: 2.1rem; font-weight: 800; margin-bottom: 10px; }
+    .page-hero p { opacity: 0.9; max-width: 580px; }
+
+    section { padding: 60px 0; }
+    .section-title { text-align: center; margin-bottom: 40px; }
+    .section-title h2 { font-size: 1.8rem; font-weight: 800; margin-bottom: 10px; }
+    .section-title p { color: var(--text-light); max-width: 560px; margin: 0 auto; }
+
+    .services-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;
+    }
+    .service-card {
+      background: var(--white); border: 1px solid var(--gray); border-radius: 14px;
+      padding: 28px 24px; transition: all 0.25s;
+    }
+    .service-card:hover { box-shadow: var(--shadow); transform: translateY(-3px); }
+    .service-card h3 { font-size: 1.15rem; font-weight: 700; color: var(--primary-dark); margin-bottom: 10px; }
+    .service-card p { font-size: 0.92rem; color: var(--text-light); margin: 0; }
+
+    .competencies {
+      background: var(--white); border-radius: 16px; padding: 36px;
+      box-shadow: var(--shadow); margin-top: 20px;
+    }
+    .competencies h3 { font-size: 1.3rem; color: var(--primary); margin-bottom: 20px; }
+    .comp-list { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .comp-item {
+      display: flex; gap: 12px; align-items: flex-start;
+      padding: 14px; background: var(--bg); border-radius: 10px;
+    }
+    .comp-item strong { display: block; font-size: 0.95rem; margin-bottom: 2px; }
+    .comp-item span { font-size: 0.85rem; color: var(--text-light); }
+
+    .faq { margin-top: 20px; }
+    .faq-item {
+      background: var(--white); border: 1px solid var(--gray); border-radius: 12px;
+      margin-bottom: 12px; overflow: hidden;
+    }
+    .faq-q {
+      padding: 18px 22px; font-weight: 600; cursor: pointer;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .faq-q:hover { background: var(--bg); }
+    .faq-a {
+      padding: 0 22px 18px; color: var(--text-light); font-size: 0.95rem;
+      display: none;
+    }
+    .faq-item.open .faq-a { display: block; }
+    .faq-item.open .faq-q { color: var(--primary); }
+
+    .form-block {
+      background: var(--white); border-radius: 16px; padding: 36px;
+      box-shadow: var(--shadow); max-width: 560px; margin: 0 auto;
+    }
+    .form-block h3 { text-align: center; margin-bottom: 22px; font-size: 1.3rem; }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 0.88rem; font-weight: 500; margin-bottom: 5px; }
+    .form-group input, .form-group textarea {
+      width: 100%; padding: 12px 14px; border: 1px solid #d0d5dd;
+      border-radius: 8px; font-size: 15px; font-family: inherit; background: #f9fafb;
+    }
+    .form-group input:focus, .form-group textarea:focus {
+      outline: none; border-color: var(--primary); background: #fff;
+    }
+    .form-group textarea { min-height: 100px; resize: vertical; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 13px 24px; border-radius: 10px; font-weight: 600; font-size: 15px;
+      border: none; cursor: pointer; background: var(--primary); color: #fff; width: 100%;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: var(--primary-dark); }
+    .checkbox-label {
+      display: flex; gap: 10px; align-items: flex-start; font-size: 0.83rem;
+      color: var(--text-light); cursor: pointer;
+    }
+    .checkbox-label input { width: 16px; height: 16px; margin-top: 2px; accent-color: var(--primary); }
+    .checkbox-label a { color: var(--primary); text-decoration: underline; }
+
+    footer {
+      background: #0a1929; color: rgba(255,255,255,0.75); padding: 28px 0; text-align: center; font-size: 0.88rem;
+    }
+
+    @media (max-width: 700px) {
+      .services-grid, .comp-list { grid-template-columns: 1fr; }
+    }
+  
+    .scroll-top {
+      position: fixed; right: 20px; bottom: 24px; z-index: 1100;
+      width: 46px; height: 46px; border-radius: 50%;
+      border: none; cursor: pointer;
+      background: var(--primary); color: #fff;
+      box-shadow: 0 6px 18px rgba(13,71,161,0.25);
+      display: flex; opacity: 0; visibility: hidden; align-items: center; justify-content: center;
+      transition: transform 0.2s, opacity 0.2s;
+    }
+    .scroll-top.show { opacity: 1; visibility: visible; }
+    .scroll-top:hover { transform: translateY(-2px); background: var(--primary-dark); }
+    .scroll-top svg { width: 20px; height: 20px; }
+
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container header-inner">
+      <div style="display:flex;align-items:center;gap:16px;">
+        <a href="index.html" class="back-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          Назад
+        </a>
+        <a href="index.html" class="logo">
+          <div class="logo-icon">АЭ</div>
+          <span>Альтер Энерго</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <section class="page-hero">
+    <div class="container">
+      <h1>Решения под ключ</h1>
+      <p>Полный цикл работ: от проектирования и производства НКУ до монтажа, пусконаладки и сервисного обслуживания.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="container">
+      <div class="section-title">
+        <h2>Услуги</h2>
+        <p>Комплексный подход к каждому объекту</p>
+      </div>
+      <div class="services-grid">
+        <div class="service-card">
+          <h3>Генеральный подряд</h3>
+          <p>Полный спектр работ от проектирования до ввода объекта в эксплуатацию.</p>
+        </div>
+        <div class="service-card">
+          <h3>Монтаж и ПНР</h3>
+          <p>Монтаж оборудования, котельных, насосных станций. Пусконаладка и сдача в эксплуатацию.</p>
+        </div>
+        <div class="service-card">
+          <h3>Автоматизация</h3>
+          <p>Внедрение АСУ ТП, диспетчеризация, разработка шкафов управления на базе ОВЕН.</p>
+        </div>
+        <div class="service-card">
+          <h3>Сервис и ремонт</h3>
+          <p>Гарантийное и постгарантийное обслуживание. Ремонтно-наладочные испытания.</p>
+        </div>
+      </div>
+
+      <div class="competencies">
+        <h3>Наши компетенции</h3>
+        <div class="comp-list">
+          <div class="comp-item">
+            <div>
+              <strong>Производство НКУ</strong>
+              <span>Собственное производство шкафов управления и автоматики</span>
+            </div>
+          </div>
+          <div class="comp-item">
+            <div>
+              <strong>Сварка НАКС</strong>
+              <span>Аттестованные сварщики для ответственных металлоконструкций</span>
+            </div>
+          </div>
+          <div class="comp-item">
+            <div>
+              <strong>Сервисный центр</strong>
+              <span>Авторизованный сервис по оборудованию партнёров</span>
+            </div>
+          </div>
+          <div class="comp-item">
+            <div>
+              <strong>СРО</strong>
+              <span>Допуски на проектирование и строительно-монтажные работы</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="background:var(--white);">
+    <div class="container">
+      <div class="section-title">
+        <h2>Частые вопросы</h2>
+      </div>
+      <div class="faq">
+        <div class="faq-item">
+          <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+            Какие объекты вы обслуживаете?
+            <span>+</span>
+          </div>
+          <div class="faq-a">Работаем с промышленными предприятиями, объектами ЖКХ, коммерческими зданиями. Специализируемся на котельных, ИТП, системах теплоснабжения и автоматизации.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+            Делаете ли вы проектирование?
+            <span>+</span>
+          </div>
+          <div class="faq-a">Да. У нас есть допуск СРО на проектирование. Разрабатываем проектную документацию и рабочую документацию.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+            Можно ли заказать только шкаф управления?
+            <span>+</span>
+          </div>
+          <div class="faq-a">Да. Мы производим НКУ под конкретный проект. Можно заказать отдельно шкаф или в составе комплексных работ.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+            Работаете ли вы за пределами Иркутска?
+            <span>+</span>
+          </div>
+          <div class="faq-a">Основной регион — Иркутск и Иркутская область. По согласованию выезжаем в соседние регионы.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="container">
+      <div class="form-block">
+        <h3>Оставить заявку</h3>
+        <form id="form" novalidate>
+          <div class="form-group">
+            <label>Ваше имя *</label>
+            <input type="text" placeholder="Иван Иванов">
+          </div>
+          <div class="form-group">
+            <label>Телефон *</label>
+            <input type="tel" placeholder="+7 (___) ___-__-__">
+          </div>
+          <div class="form-group">
+            <label>Комментарий</label>
+            <textarea placeholder="Опишите задачу..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" name="agreement">
+              <span>Согласен на обработку персональных данных и принимаю <a href="privacy.html" target="_blank">политику конфиденциальности</a></span>
+            </label>
+          </div>
+          <button type="submit" class="btn">Отправить заявку</button>
+        </form>
+          <div id="form-message" style="margin-top:14px;font-size:0.92rem;font-weight:500;display:none;"></div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">© 2007–2026 ООО ИТЦ «Альтер Энерго»</div>
+  </footer>
+<script>
+  
+  
+  
+
+  function handleFormSubmit(e) {
+    e.preventDefault();
+    const form = e.target;
+    let msg = form.parentElement.querySelector('#form-message') || document.getElementById('form-message');
+    if (!msg) {
+      msg = document.createElement('div');
+      msg.id = 'form-message';
+      msg.style.cssText = 'margin-top:14px;font-size:0.92rem;font-weight:500;';
+      form.parentElement.appendChild(msg);
+    }
+    const nameInput = form.querySelector('input[type="text"]');
+    const phoneInput = form.querySelector('input[type="tel"]');
+    const emailInput = form.querySelector('input[type="email"]');
+    const agreeInput = form.querySelector('input[type="checkbox"]');
+    const commentInput = form.querySelector('textarea');
+    const errors = [];
+    if (nameInput && !nameInput.value.trim()) errors.push('имя');
+    const hasPhone = phoneInput && phoneInput.value.trim();
+    const hasEmail = emailInput && emailInput.value.trim();
+    if (!hasPhone && !hasEmail) errors.push('телефон или email');
+    if (agreeInput && !agreeInput.checked) errors.push('согласие на обработку данных');
+    if (errors.length) {
+      msg.style.display = 'block';
+      msg.style.color = '#c62828';
+      msg.textContent = 'Заполните: ' + errors.join(', ');
+      return;
+    }
+    msg.style.display = 'block';
+    msg.style.color = '#5a5a7a';
+    msg.textContent = 'Отправка...';
+    const payload = {
+      access_key: 'f055fbbd-e7da-4d53-8b84-e9caa65a390b',
+      subject: 'Заявка с сайта Альтер Энерго',
+      from_name: 'Сайт Альтер Энерго',
+      name: nameInput ? nameInput.value.trim() : '',
+      phone: phoneInput ? phoneInput.value.trim() : '',
+      email: emailInput && emailInput.value.trim() ? emailInput.value.trim() : 'Не указан',
+      message: commentInput ? commentInput.value.trim() : '',
+      agreement: 'Да'
+    };
+    fetch('https://api.web3forms.com/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(r => r.json()).then(data => {
+      if (!data.success) throw new Error(data.message || 'fail');
+      msg.style.color = '#2e7d32';
+      msg.textContent = 'Заявка отправлена! Мы свяжемся с вами.';
+      form.reset();
+    }).catch(err => {
+      console.error(err);
+      msg.style.color = '#c62828';
+      msg.textContent = 'Не удалось отправить. Попробуйте ещё раз или позвоните нам.';
+    });
+  }
+  
+  document.querySelectorAll('form').forEach(function(f) {
+    f.addEventListener('submit', handleFormSubmit);
+  });
+
+
+    const scrollTopBtn = document.getElementById('scrollTop');
+    if (scrollTopBtn) {
+      window.addEventListener('scroll', () => {
+        scrollTopBtn.style.display = window.scrollY > 400 ? 'flex' : 'none';
+      });
+      scrollTopBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    }
+  </script>
+
+  <button type="button" class="scroll-top" id="scrollTop" title="Наверх" aria-label="Наверх">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 14 12 8 18 14"/></svg>
+  </button>
+
+<script src="cart-order.js"></script>
+<script>/*ae-scroll-top*/
+
+    (function(){
+      var btn = document.getElementById('scrollTop');
+      if (!btn) return;
+      window.addEventListener('scroll', function(){
+        if (window.scrollY > 300) btn.classList.add('show'); else btn.classList.remove('show');
+      });
+      btn.addEventListener('click', function(){
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    })();
+
+</script>
+</body>
+</html>

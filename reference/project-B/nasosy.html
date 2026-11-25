@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Насосы — ООО ИТЦ «Альтер Энерго»</title>
+  <meta name="theme-color" content="#0d47a1" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230d47a1'/%3E%3Ctext x='32' y='43' font-family='Arial' font-size='24' font-weight='bold' fill='%23fff' text-anchor='middle'%3EAE%3C/text%3E%3C/svg%3E" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --primary: #0d47a1; --primary-dark: #002171; --accent: #00acc1;
+      --text: #1a1a2e; --text-light: #5a5a7a; --bg: #f5f7fa;
+      --white: #ffffff; --gray: #e8ecf1; --radius: 12px;
+      --shadow: 0 4px 20px rgba(13,71,161,0.08);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; color: var(--text); background: var(--bg); line-height: 1.6; min-height: 100vh; display: flex; flex-direction: column; }
+    a { text-decoration: none; color: inherit; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+    header { background: var(--white); box-shadow: 0 2px 10px rgba(0,0,0,0.06); position: sticky; top: 0; z-index: 100; padding: 14px 0; }
+    .header-inner { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+    .header-left { display: flex; align-items: center; gap: 16px; }
+    .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; color: var(--primary); font-size: 1.15rem; }
+    .logo-icon { width: 40px; height: 40px; background: linear-gradient(135deg, var(--primary), var(--accent)); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 16px; }
+    .back-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 14px; color: var(--primary); background: rgba(13,71,161,0.06); transition: all 0.2s; }
+    .back-btn:hover { background: var(--primary); color: #fff; }
+    .back-btn svg { width: 18px; height: 18px; }
+    .cart-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; background: var(--primary); color: #fff; border: none; cursor: pointer; }
+    .cart-btn span { background: var(--accent); color: #fff; border-radius: 999px; padding: 2px 8px; font-size: 12px; }
+    .page-hero { background: var(--primary); color: #fff; padding: 44px 0 36px; }
+    .page-hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: 8px; }
+    .page-hero p { opacity: 0.9; max-width: 560px; font-size: 1.02rem; }
+    .detail-back { display: none; align-items: center; gap: 7px; margin-bottom: 14px; color: #fff; font-weight: 700; opacity: .95; }
+    .detail-back:hover { text-decoration: underline; }
+    .toolbar { background: var(--white); border-bottom: 1px solid var(--gray); padding: 18px 0; position: sticky; top: 68px; z-index: 90; }
+    .toolbar-inner { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+    .search-wrap { flex: 1; min-width: 220px; position: relative; }
+    .search-wrap svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: var(--text-light); }
+    .search-wrap input { width: 100%; padding: 12px 14px 12px 42px; border: 1px solid #d0d5dd; border-radius: 10px; font-size: 15px; font-family: inherit; background: #f9fafb; }
+    .search-wrap input:focus { outline: none; border-color: var(--primary); background: #fff; box-shadow: 0 0 0 3px rgba(13,71,161,0.1); }
+    .select-wrap { position: relative; min-width: 220px; }
+    .select-wrap select { width: 100%; padding: 12px 36px 12px 14px; border: 1px solid #d0d5dd; border-radius: 10px; font-size: 14px; font-family: inherit; background: #f9fafb; appearance: none; cursor: pointer; color: var(--text); }
+    .select-wrap select:focus { outline: none; border-color: var(--primary); background: #fff; }
+    .select-wrap::after { content: ''; position: absolute; right: 14px; top: 50%; width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 6px solid var(--text-light); pointer-events: none; transform: translateY(-50%); }
+    .content { padding: 36px 0 40px; flex: 1; }
+    .filter-info { font-size: 0.9rem; color: var(--text-light); margin-bottom: 18px; }
+    .filter-info strong { color: var(--text); }
+    .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; }
+    .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; align-items: stretch; }
+    .product-card { background: var(--white); border: 1px solid var(--gray); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; transition: box-shadow 0.2s, transform 0.2s; height: 100%; min-height: 340px; }
+    .product-card:hover { box-shadow: var(--shadow); transform: translateY(-3px); }
+    .product-image { height: 180px; flex: 0 0 180px; background: #fff; display: flex; align-items: center; justify-content: center; color: var(--text-light); font-size: 0.9rem; padding: 8px 12px; box-sizing: border-box; }
+    .product-image img { display: block; width: 100%; height: 100%; object-fit: contain; object-position: center; }
+    .product-body { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+    .product-body h3 { font-size: 1.02rem; font-weight: 700; color: var(--primary-dark); line-height: 1.35; min-height: 4.1em; max-height: 4.1em; overflow: hidden; }
+    .product-type { display: none; }
+    .product-price { font-size: 1.15rem; font-weight: 800; color: var(--primary); margin-top: auto; }
+    .series-count { margin-bottom: 0; }
+    .series-open { margin-top: 8px; }
+    .series-count { display: inline-flex; width: fit-content; padding: 5px 10px; border-radius: 999px; background: #e8f4fb; color: var(--primary); font-size: .8rem; font-weight: 700; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 14px; border-radius: 10px; font-weight: 600; font-size: 14px; border: none; cursor: pointer; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
+    .series-open { width: 100%; margin-top: 10px; text-align: center; }
+    .empty-state { background: var(--white); border: 1px dashed #c5cdd8; border-radius: 14px; padding: 40px 30px; text-align: center; color: var(--text-light); }
+    .empty-state h3 { font-size: 1.2rem; color: var(--text); margin-bottom: 10px; font-weight: 700; }
+    .status { font-size: 0.9rem; color: var(--text-light); margin-bottom: 12px; display: none; }
+    .status.error { color: #c62828; display: block; }
+
+    /* list like table for models inside series */
+    .models-wrap { width: 100%; overflow-x: auto; border: 1px solid var(--gray); border-radius: 14px; background: var(--white); }
+    .models-table { width: max-content; min-width: 100%; border-collapse: separate; border-spacing: 0; }
+    .models-table .row { display: grid; gap: 0; align-items: stretch; border-bottom: 1px solid var(--gray); }
+    .models-table .row:last-child { border-bottom: none; }
+    .models-table .row > div { font-size: 0.86rem; padding: 12px 14px; line-height: 1.35; border-right: 1px solid #eef2f6; display: flex; align-items: center; word-break: break-word; }
+    .models-table .row > div:last-child { border-right: none; justify-content: center; }
+    .models-table .head { background: #f3f6fa; position: sticky; top: 0; z-index: 2; }
+    .models-table .head > div { font-weight: 700; font-size: 0.78rem; color: var(--text-light); line-height: 1.25; white-space: normal; hyphens: auto; }
+    .models-table .name { font-weight: 600; color: var(--primary-dark); }
+    .models-table .row:not(.head):hover { background: #f8fbff; }
+    .models-table .btn { padding: 8px 12px; font-size: 13px; white-space: nowrap; }
+
+    footer { background: #0a1929; color: rgba(255,255,255,0.75); padding: 28px 0; text-align: center; font-size: 0.88rem; }
+    .cart-drawer { position: fixed; top: 0; right: -420px; width: 400px; max-width: 100%; height: 100vh; background: #fff; box-shadow: -8px 0 30px rgba(0,0,0,0.12); z-index: 200; transition: right 0.3s; display: flex; flex-direction: column; }
+    .cart-drawer.open { right: 0; }
+    .cart-header { padding: 18px 20px; border-bottom: 1px solid var(--gray); display: flex; justify-content: space-between; align-items: center; }
+    .cart-header h2 { font-size: 1.2rem; }
+    .cart-close { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--text-light); }
+    .cart-items { flex: 1; overflow: auto; padding: 16px 20px; }
+    .cart-item { display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--gray); }
+    .cart-item h4 { font-size: 0.95rem; margin-bottom: 4px; }
+    .cart-item .meta { font-size: 0.85rem; color: var(--text-light); }
+    .cart-footer { padding: 16px 20px; border-top: 1px solid var(--gray); }
+    .cart-total { display: flex; justify-content: space-between; font-weight: 700; margin-bottom: 12px; }
+    .cart-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 150; opacity: 0; visibility: hidden; transition: all 0.3s; }
+    .cart-overlay.open { opacity: 1; visibility: visible; }
+    @media (max-width: 700px) {
+      .toolbar-inner { flex-direction: column; align-items: stretch; }
+      .select-wrap { min-width: 100%; }
+      .cart-drawer { width: 100%; right: -100%; }
+      .models-table .row { grid-template-columns: 1fr; gap: 6px; }
+    }
+  
+    .scroll-top {
+      position: fixed; right: 20px; bottom: 24px; z-index: 1100;
+      width: 46px; height: 46px; border-radius: 50%;
+      border: none; cursor: pointer;
+      background: var(--primary); color: #fff;
+      box-shadow: 0 6px 18px rgba(13,71,161,0.25);
+      display: flex; opacity: 0; visibility: hidden; align-items: center; justify-content: center;
+      transition: transform 0.2s, opacity 0.2s;
+    }
+    .scroll-top.show { opacity: 1; visibility: visible; }
+    .scroll-top:hover { transform: translateY(-2px); background: var(--primary-dark); }
+    .scroll-top svg { width: 20px; height: 20px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container header-inner">
+      <div class="header-left">
+        <a href="index.html" class="back-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          Назад
+        </a>
+        <a href="index.html" class="logo">
+          <div class="logo-icon">АЭ</div>
+          <span>Альтер Энерго</span>
+        </a>
+      </div>
+      <button class="cart-btn" id="openCart" type="button">Корзина <span id="cartCount">0</span></button>
+    </div>
+  </header>
+
+  <section class="page-hero">
+    <div class="container">
+      <a class="detail-back" id="detailBack" href="nasosy.html" style="display:none;">← Все серии насосов</a>
+      <h1 id="pageTitle">Насосы</h1>
+      <p id="pageSubtitle">Насосное оборудование. Подбор под задачу.</p>
+    </div>
+  </section>
+
+  <div class="toolbar" id="toolbar">
+    <div class="container toolbar-inner">
+      <div class="select-wrap">
+        <select id="catalog">
+          <option value="all">Все насосы</option>
+          <option value="vertical_multi">Вертикальные многоступенчатые</option>
+          <option value="vertical_single">Вертикальные одноступенчатые</option>
+          <option value="horizontal_single">Горизонтальные консольно-моноблочные одноступенчатые</option>
+          <option value="circ">Циркуляционные</option>
+          <option value="stations">Станции повышения давления</option>
+          <option value="stations_fire">Станции пожаротушения</option>
+        </select>
+      </div>
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="search" id="search" placeholder="Поиск по серии, модели, артикулу..." autocomplete="off">
+      </div>
+      <div class="select-wrap">
+        <select id="sort">
+          <option value="default">Сортировка: по умолчанию</option>
+          <option value="name-asc">По названию (А–Я)</option>
+          <option value="name-desc">По названию (Я–А)</option>
+          <option value="price-asc">Сначала дешевле</option>
+          <option value="price-desc">Сначала дороже</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="container">
+      <div class="status" id="status"></div>
+      <div class="filter-info" id="filterInfo">Показано: <strong>все</strong></div>
+      <div id="products" class="products-grid"></div>
+      <div class="empty-state" id="empty" style="display:none;">
+        <h3>Ничего не найдено</h3>
+        <p>Измените поиск или выберите другой тип насосов.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="cart-overlay" id="cartOverlayOld" style="display:none"></div>
+  <aside class="cart-drawer" id="cartDrawerOld" style="display:none">
+    <div class="cart-header">
+      <h2>Корзина</h2>
+      <button class="cart-close" id="closeCartOld" type="button">×</button>
+    </div>
+    <div class="cart-items" id="cartItemsOld"></div>
+    <div class="cart-footer">
+      <div class="cart-total"><span>Итого</span><span id="cartTotalOld">0 ₽</span></div>
+      <button class="btn btn-primary" id="checkoutBtnOld" type="button" style="width:100%;">Оформить заказ</button>
+    </div>
+  </aside>
+
+  <footer><div class="container">© 2007–2026 ООО ИТЦ «Альтер Энерго»</div></footer>
+
+  <script src="cart-order.js"></script>
+  <script src="products-nasosy.js"></script>
+  <script>
+    const SHEET_ID = "1dRw15GusgfSYp6n_AjsAAr9bEUDu0H6HX5VU3DktaGQ";
+    const SHEET_GID = "0";
+    const CACHE_KEY = "ae_nasosy_cache_v7";
+    let allProducts = [];
+    let cart = JSON.parse(localStorage.getItem("ae_cart") || "[]");
+
+    const pageParams = new URLSearchParams(window.location.search);
+    const selectedSeries = pageParams.get("series");
+
+    const els = {
+      products: document.getElementById("products"),
+      empty: document.getElementById("empty"),
+      status: document.getElementById("status"),
+      filterInfo: document.getElementById("filterInfo"),
+      catalog: document.getElementById("catalog"),
+      search: document.getElementById("search"),
+      sort: document.getElementById("sort"),
+      cartCount: document.getElementById("cartCount"),
+      cartItems: document.getElementById("cartItems"),
+      cartTotal: document.getElementById("cartTotal"),
+      cartDrawer: document.getElementById("cartDrawer"),
+      cartOverlay: document.getElementById("cartOverlay"),
+      pageTitle: document.getElementById("pageTitle"),
+      pageSubtitle: document.getElementById("pageSubtitle"),
+      detailBack: document.getElementById("detailBack"),
+      toolbar: document.getElementById("toolbar"),
+    };
+
+    function escapeHtml(value) {
+      return String(value == null ? "" : value).replace(/[&<>"']/g, ch => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      }[ch]));
+    }
+
+    function formatPrice(value) {
+      if (value == null || value === "" || String(value).toLowerCase() === "по запросу") return "По запросу";
+      const num = Number(String(value).replace(/\s/g, "").replace(",", "."));
+      if (Number.isFinite(num)) return num.toLocaleString("ru-RU") + " ₽";
+      return String(value);
+    }
+
+    function priceNumber(value) {
+      const num = Number(String(value || "").replace(/\s/g, "").replace(",", "."));
+      return Number.isFinite(num) ? num : null;
+    }
+
+    function detectType(product) {
+      const text = (
+        (product.description || "") + " " +
+        (product.model || "") + " " +
+        (product.series || "")
+      ).toLowerCase();
+
+      if (/пожаротуш/.test(text)) return "stations_fire";
+      if (/станци/.test(text) && /повышен/.test(text)) return "stations";
+      if (/станци/.test(text)) return "stations";
+      if (/циркуляц/.test(text)) return "circ";
+      if (/горизонтал/.test(text) && /одноступен/.test(text)) return "horizontal_single";
+      if (/горизонтал/.test(text)) return "horizontal_single";
+      if (/вертикал/.test(text) && /одноступен/.test(text)) return "vertical_single";
+      if (/вертикал/.test(text) && /многоступен/.test(text)) return "vertical_multi";
+      if (/многоступен/.test(text)) return "vertical_multi";
+      if (/одноступен/.test(text)) return "vertical_single";
+      return "other";
+    }
+
+    function shortTypeLabel(type) {
+      return ({
+        vertical_multi: 'Вертикальный многоступенчатый насос',
+        vertical_single: 'Вертикальный одноступенчатый насос',
+        horizontal_single: 'Горизонтальный консольно-моноблочный насос',
+        circ: 'Циркуляционный насос',
+        stations: 'Станция повышения давления',
+        stations_fire: 'Станция пожаротушения',
+        other: 'Насос'
+      })[type] || 'Насос';
+    }
+
+    function seriesDisplayName(product, series) {
+      const seriesName = String(series || product.series || product.model || '').trim();
+      const short = shortTypeLabel(product.type);
+      // если серия уже содержит тип — не дублируем
+      const sLow = seriesName.toLowerCase();
+      const tLow = short.toLowerCase();
+      if (!seriesName) return short;
+      if (sLow.includes('насос') || sLow.includes('станци') || sLow.includes(tLow.split(' ')[0])) {
+        return seriesName;
+      }
+      return short + ' ' + seriesName;
+    }
+
+    function naturalCompare(a, b) {
+      return String(a).localeCompare(String(b), 'ru', { numeric: true, sensitivity: 'base' });
+    }
+
+    function typeLabel(type) {
+      return ({
+        vertical_multi: "Вертикальный многоступенчатый насос",
+        vertical_single: "Вертикальный одноступенчатый насос",
+        horizontal_single: "Горизонтальный консольно-моноблочный одноступенчатый насос",
+        circ: "Циркуляционный насос",
+        stations: "Станция повышения давления",
+        stations_fire: "Станция пожаротушения",
+        other: "Насос"
+      })[type] || "Насос";
+    }
+
+    function rowsFromGviz(data) {
+      const table = data.table;
+      const headers = table.cols.map(c => (c.label || c.id || "").trim());
+      return (table.rows || []).map(row => {
+        const obj = {};
+        headers.forEach((h, i) => {
+          const cell = row.c[i];
+          obj[h] = cell ? (cell.f != null ? cell.f : (cell.v != null ? cell.v : "")) : "";
+        });
+        return obj;
+      });
+    }
+
+    
+    // Поля характеристик: [ключ в данных, подпись на сайте]
+    const SPEC_FIELDS = [
+      ['power_p2', 'Мощность<br>Р2, кВт'],
+      ['rpm', 'Частота<br>об/мин'],
+      ['pressure', 'Давление<br>бар'],
+      ['voltage', 'Напряжение<br>В'],
+      ['ports', 'Патрубки'],
+      ['port_in', 'Всас.<br>патрубок'],
+      ['port_out', 'Напорн.<br>патрубок'],
+      ['construction', 'Исполнение'],
+      ['collectors', 'Коллекторы'],
+      ['automation', 'Блок<br>автоматики'],
+      ['power_p1', 'Мощность<br>Р1, Вт'],
+      ['pipe_size', 'Присоед.'],
+      ['mount_length', 'Монт.<br>длина, мм']
+    ];
+
+    function normalizeProducts(rows) {
+      return rows.map((row, index) => {
+        const map = {};
+        Object.keys(row).forEach(k => { map[String(k).trim().toLowerCase()] = row[k]; });
+        const pick = (...keys) => {
+          for (const key of keys) {
+            const value = map[key.toLowerCase()];
+            if (value != null && String(value).trim() !== '') return String(value).trim();
+          }
+          return '';
+        };
+
+        const series = pick('серия', 'series');
+        const model = pick('модель', 'model', 'name', 'название');
+        const sku = pick('артикул', 'sku', 'id');
+        const price = pick('стоймость', 'стоимость', 'price', 'цена') || 'по запросу';
+        const image = pick('фото', 'image');
+        const description = pick('описание', 'description');
+
+        const product = {
+          id: String(sku || model || ((series || 'item') + '-' + index)),
+          series: series || model || 'Без серии',
+          model: model || series || 'Без модели',
+          sku,
+          price,
+          image,
+          description,
+          power_p2: pick('мощность р2, квт', 'мощность р2'),
+          rpm: pick('частота вращения об/мин', 'частота вращения, об/мин'),
+          pressure: pick('максимальное рабочее давление, бар', 'макс. давление, бар'),
+          voltage: pick('напряжение питания, в', 'напряжение, в'),
+          ports: pick('размер патрубков'),
+          port_in: pick('разммер всасывающего патрубка', 'размер всасывающего патрубка'),
+          port_out: pick('размер напорного патрубка'),
+          construction: pick('конструктивное исполнение'),
+          collectors: pick('размер коллекторов'),
+          automation: pick('положение блока автоматики'),
+          power_p1: pick('мощность р1 (скорость 1/2/3), вт', 'мощность р1'),
+          pipe_size: pick('размер трубного присоединения'),
+          mount_length: pick('монтажная длина, мм')
+        };
+        product.type = detectType(product);
+        product.typeLabel = description || typeLabel(product.type);
+        return product;
+      }).filter(p => p.model || p.series);
+    }
+
+
+    function applyRawProducts(rawList) {
+      // если уже нормализованы (локальный снимок) — дополним type
+      allProducts = (rawList || []).map((p, index) => {
+        const product = Object.assign({}, p);
+        if (!product.type) product.type = detectType(product);
+        if (!product.typeLabel) product.typeLabel = product.description || typeLabel(product.type);
+        if (!product.id) product.id = String(product.sku || product.model || ('item-' + index));
+        return product;
+      }).filter(p => p.model || p.series);
+      try {
+        localStorage.setItem(CACHE_KEY, JSON.stringify(allProducts));
+        localStorage.setItem('ae_nasosy_updated_at', String(Date.now()));
+      } catch (e) {}
+      render();
+    }
+
+    function loadProducts() {
+      return new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error("timeout")), 12000);
+        const prevGoogle = window.google;
+        window.google = {
+          visualization: {
+            Query: {
+              setResponse: function(data) {
+                clearTimeout(timeout);
+                try {
+                  allProducts = normalizeProducts(rowsFromGviz(data));
+                  // свежие данные таблицы — главный источник
+                  try {
+        localStorage.setItem(CACHE_KEY, JSON.stringify(allProducts));
+        localStorage.setItem('ae_nasosy_updated_at', String(Date.now()));
+      } catch (e) {}
+                  els.status.style.display = "none";
+                  render();
+                  resolve();
+                } catch (e) {
+                  reject(e);
+                } finally {
+                  if (prevGoogle === undefined) delete window.google;
+                  else window.google = prevGoogle;
+                  if (script && script.parentNode) script.parentNode.removeChild(script);
+                }
+              }
+            }
+          }
+        };
+        const script = document.createElement("script");
+        script.src = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/gviz/tq?tqx=out:json&tq=" + encodeURIComponent("select *") + "&gid=" + SHEET_GID + "&t=" + Date.now();
+        script.onerror = function() {
+          clearTimeout(timeout);
+          reject(new Error("script error"));
+        };
+        document.body.appendChild(script);
+      }).catch(err => {
+        console.error(err);
+        if (!allProducts.length) {
+          els.status.className = "status error";
+          els.status.textContent = "Не удалось загрузить каталог. Проверьте доступ к таблице.";
+        }
+      });
+    }
+
+    function getFiltered() {
+      const type = els.catalog.value;
+      const q = els.search.value.trim().toLowerCase();
+      let list = allProducts.slice();
+
+      if (type !== "all") list = list.filter(p => p.type === type);
+      if (selectedSeries) list = list.filter(p => String(p.series).toLowerCase() === selectedSeries.toLowerCase());
+
+      if (q) {
+        list = list.filter(p =>
+          (p.series || "").toLowerCase().includes(q) ||
+          (p.model || "").toLowerCase().includes(q) ||
+          (p.sku || "").toLowerCase().includes(q) ||
+          (p.description || "").toLowerCase().includes(q)
+        );
+      }
+
+      const sort = els.sort.value;
+      list.sort((a, b) => {
+        const an = selectedSeries ? a.model : seriesDisplayName(a, a.series);
+        const bn = selectedSeries ? b.model : seriesDisplayName(b, b.series);
+        if (sort === "name-asc") return naturalCompare(an, bn);
+        if (sort === "name-desc") return naturalCompare(bn, an);
+        if (sort === "price-asc") return (priceNumber(a.price) ?? 1e15) - (priceNumber(b.price) ?? 1e15);
+        if (sort === "price-desc") return (priceNumber(b.price) ?? -1) - (priceNumber(a.price) ?? -1);
+        return naturalCompare(an, bn);
+      });
+      return list;
+    }
+
+    function productImage(product) {
+      const raw = String(product && product.image || '').trim();
+      if (!raw) return "Нет фото";
+
+      // Фото может быть веб-ссылкой или относительным путём внутри проекта.
+      const src = raw.replace(/\\/g, '/').replace(/^\.\//, '');
+      const isWebUrl = /^https?:\/\//i.test(src);
+      const isRelativePath =
+        !/^[a-z][a-z0-9+.-]*:/i.test(src) &&
+        !src.startsWith('//') &&
+        !src.startsWith('/') &&
+        !/^[a-z]:\//i.test(src);
+
+      if (!isWebUrl && !isRelativePath) return "Нет фото";
+
+      return `<img src="${escapeHtml(src)}" alt="" onerror="this.style.display='none'; this.parentElement.textContent='Фото не найдено';">`;
+    }
+
+    function renderSeriesCards(list) {
+      const groups = new Map();
+      list.forEach(p => {
+        const key = p.series || p.model;
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(p);
+      });
+
+      els.filterInfo.innerHTML = "Показано: <strong>" + escapeHtml(els.catalog.options[els.catalog.selectedIndex].text) + "</strong> · серий: " + groups.size;
+      if (!groups.size) {
+        els.products.innerHTML = "";
+        els.products.className = "products-grid";
+        els.empty.style.display = "block";
+        return;
+      }
+      els.empty.style.display = "none";
+      els.products.className = "products-grid";
+
+      const sortedGroups = Array.from(groups.entries()).sort((a, b) => {
+        const pa = a[1][0];
+        const pb = b[1][0];
+        return naturalCompare(seriesDisplayName(pa, a[0]), seriesDisplayName(pb, b[0]));
+      });
+
+      els.products.innerHTML = sortedGroups.map(([series, items]) => {
+        const first = items[0];
+        const title = seriesDisplayName(first, series);
+        const prices = items.map(i => priceNumber(i.price)).filter(v => v != null);
+        const priceLabel = prices.length ? "от " + Math.min(...prices).toLocaleString("ru-RU") + " ₽" : "По запросу";
+
+        // одна модель в серии — сразу карточка серии с кнопкой в корзину, без входа внутрь
+        if (items.length === 1) {
+          return '<article class="product-card">' +
+            '<div class="product-image">' + productImage(first) + '</div>' +
+            '<div class="product-body">' +
+              '<h3>' + escapeHtml(title) + '</h3>' +
+              '<div class="product-price">' + escapeHtml(formatPrice(first.price)) + '</div>' +
+              '<button class="btn btn-primary series-open" data-add="' + escapeHtml(first.id) + '">В корзину</button>' +
+            '</div>' +
+          '</article>';
+        }
+
+        return '<article class="product-card card-link" data-series="' + escapeHtml(series) + '" style="cursor:pointer;">' +
+          '<div class="product-image">' + productImage(first) + '</div>' +
+          '<div class="product-body">' +
+            '<h3>' + escapeHtml(title) + '</h3>' +
+            '<span class="series-count">' + items.length + ' ' + (items.length < 5 ? 'модели' : 'моделей') + '</span>' +
+            '<div class="product-price">' + priceLabel + '</div>' +
+            '<a class="btn btn-primary series-open" href="nasosy.html?series=' + encodeURIComponent(series) + '">Смотреть модели</a>' +
+          '</div>' +
+        '</article>';
+      }).join("");
+
+      els.products.querySelectorAll("[data-add]").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const item = allProducts.find(p => String(p.id) === String(btn.dataset.add));
+          if (item) addToCart(item);
+        });
+      });
+      els.products.querySelectorAll('[data-series]').forEach(card => {
+        card.addEventListener('click', (e) => {
+          if (e.target.closest('a, button')) return;
+          const series = card.getAttribute('data-series');
+          if (!series) return;
+          try {
+            sessionStorage.setItem('ae_nasosy_scroll', String(window.scrollY));
+            sessionStorage.setItem('ae_nasosy_filter', els.catalog.value);
+            sessionStorage.setItem('ae_nasosy_search', els.search.value);
+            sessionStorage.setItem('ae_nasosy_sort', els.sort.value);
+          } catch (err) {}
+          window.location.href = 'nasosy.html?series=' + encodeURIComponent(series);
+        });
+      });
+    }
+
+    function renderModelsList(list) {
+      const typeName = list[0] ? list[0].typeLabel : '';
+      els.pageTitle.textContent = typeName ? (typeName + ' · ' + selectedSeries) : selectedSeries;
+      els.pageSubtitle.textContent = 'Модели серии ' + selectedSeries + ' · ' + list.length + ' шт.';
+      document.title = els.pageTitle.textContent + ' — ООО ИТЦ «Альтер Энерго»';
+      els.filterInfo.innerHTML = 'Серия <strong>' + escapeHtml(selectedSeries) + '</strong> · моделей: ' + list.length;
+      els.products.className = '';
+      if (!list.length) {
+        els.products.innerHTML = '';
+        els.empty.style.display = 'block';
+        return;
+      }
+      els.empty.style.display = 'none';
+
+      // только те характеристики, которые есть хотя бы у одной модели в этом списке
+      const activeSpecs = SPEC_FIELDS.filter(([key]) => list.some(p => p[key]));
+
+      const headCells = ['Артикул', 'Модель']
+        .concat(activeSpecs.map(([, label]) => label))
+        .concat(['']);
+
+      // Узкий артикул, широкая модель, компактные характеристики
+      const colTemplate = ['72px', 'minmax(220px, 2fr)']
+        .concat(activeSpecs.map(() => 'minmax(88px, 0.9fr)'))
+        .concat(['118px'])
+        .join(' ');
+
+      els.products.innerHTML =
+        '<div class="models-wrap"><div class="models-table">' +
+          '<div class="row head" style="grid-template-columns:' + colTemplate + '">' +
+            headCells.map(h => '<div>' + h + '</div>').join('') +
+          '</div>' +
+          list.map(p => {
+            const cells = [
+              '<div>' + escapeHtml(p.sku || '—') + '</div>',
+              '<div class="name">' + escapeHtml(p.model) + '</div>'
+            ];
+            activeSpecs.forEach(([key]) => {
+              const val = p[key];
+              cells.push('<div>' + escapeHtml(val || '—') + '</div>');
+            });
+            cells.push('<div><button class="btn btn-primary" data-add="' + escapeHtml(p.id) + '">В корзину</button></div>');
+            return '<div class="row" style="grid-template-columns:' + colTemplate + '">' + cells.join('') + '</div>';
+          }).join('') +
+        '</div></div>';
+
+      els.products.querySelectorAll('[data-add]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const item = allProducts.find(p => String(p.id) === String(btn.dataset.add));
+          if (item) addToCart(item);
+        });
+      });
+    }
+
+function render() {
+      const list = getFiltered();
+      if (selectedSeries) renderModelsList(list);
+      else renderSeriesCards(list);
+    }
+
+    function saveCart() {}
+
+    function addToCart(product) {
+      if (window.AECart) {
+        AECart.addToCart({
+          id: product.id,
+          name: product.model || product.series || product.name,
+          price: product.price,
+          sku: product.sku
+        });
+        AECart.openCart();
+      }
+    }
+
+    function removeFromCart(id) {
+      cart = cart.filter(i => String(i.id) !== String(id));
+      saveCart();
+    }
+
+    function renderCart() { if (window.AECart) AECart.renderCart(); }
+
+    function openCart() { if (window.AECart) AECart.openCart(); }
+    function closeCart() { if (window.AECart) AECart.closeCart(); }
+
+    const openCartBtn = document.getElementById("openCart");
+    if (openCartBtn) openCartBtn.addEventListener("click", function(e) {
+      e.preventDefault();
+      if (window.AECart) AECart.openCart();
+      else openCart();
+    });
+    /* checkout/cart drawer handled by cart-order.js */
+
+    // Кнопка наверх
+    const scrollTopBtn = document.getElementById('scrollTop');
+    if (scrollTopBtn) {
+      window.addEventListener('scroll', () => {
+        scrollTopBtn.style.display = window.scrollY > 400 ? 'flex' : 'none';
+      });
+      scrollTopBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    }
+
+
+    els.catalog.addEventListener("change", render);
+    els.search.addEventListener("input", render);
+    els.sort.addEventListener("change", render);
+
+    if (selectedSeries) {
+      els.pageTitle.textContent = selectedSeries;
+      els.pageSubtitle.textContent = '';
+      if (els.detailBack) els.detailBack.style.display = 'none';
+      els.toolbar.style.display = 'none';
+      document.title = selectedSeries + ' — ООО ИТЦ «Альтер Энерго»';
+    } else if (els.detailBack) {
+      els.detailBack.style.display = 'none';
+    }
+
+    
+    document.addEventListener('click', (e) => {
+      const a = e.target.closest('a.series-open');
+      if (!a || !a.getAttribute('href') || a.getAttribute('href').indexOf('series=') === -1) return;
+      try {
+        sessionStorage.setItem('ae_nasosy_scroll', String(window.scrollY));
+        sessionStorage.setItem('ae_nasosy_filter', els.catalog.value);
+        sessionStorage.setItem('ae_nasosy_search', els.search.value);
+        sessionStorage.setItem('ae_nasosy_sort', els.sort.value);
+      } catch (err) {}
+    });
+
+    const backBtn = document.querySelector('a.back-btn');
+    if (backBtn) {
+      backBtn.addEventListener('click', (e) => {
+        if (!selectedSeries) return;
+        e.preventDefault();
+        window.location.href = 'nasosy.html';
+      });
+    }
+
+renderCart();
+
+    
+    function restoreListState() {
+      if (selectedSeries) return;
+      try {
+        const f = sessionStorage.getItem('ae_nasosy_scroll');
+      } catch (err) {}
+      try {
+        const f = sessionStorage.getItem('ae_nasosy_filter');
+        const s = sessionStorage.getItem('ae_nasosy_search');
+        const so = sessionStorage.getItem('ae_nasosy_sort');
+        if (f) els.catalog.value = f;
+        if (s != null) els.search.value = s;
+        if (so) els.sort.value = so;
+      } catch (err) {}
+    }
+    function restoreScroll() {
+      if (selectedSeries) return;
+      try {
+        const y = sessionStorage.getItem('ae_nasosy_scroll');
+        if (y != null) requestAnimationFrame(() => window.scrollTo(0, Number(y) || 0));
+      } catch (err) {}
+    }
+
+    // ===== НАДЁЖНЫЙ ЗАПУСК КАТАЛОГА =====
+    function bootCatalog() {
+      var loaded = 0;
+
+      // 1) Всегда сначала локальный файл products-nasosy.js (работает без интернета)
+      try {
+        if (Array.isArray(window.AE_NASOSY_PRODUCTS) && window.AE_NASOSY_PRODUCTS.length) {
+          applyRawProducts(window.AE_NASOSY_PRODUCTS);
+          loaded = allProducts.length;
+        }
+      } catch (e) { console.error('local products', e); }
+
+      // 2) Если локального нет — пробуем кэш браузера
+      if (!loaded) {
+        try {
+          var cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+          if (Array.isArray(cached) && cached.length) {
+            allProducts = cached.map(function(p, index) {
+              if (!p.type) p.type = detectType(p);
+              if (!p.typeLabel) p.typeLabel = p.description || typeLabel(p.type);
+              return p;
+            });
+            loaded = allProducts.length;
+            render();
+          }
+        } catch (e) { console.error('cache', e); }
+      }
+
+      if (loaded) {
+        try { restoreListState(); } catch (e) {}
+        render();
+        // если после восстановления фильтра пусто — сбрасываем фильтр
+        if (!getFiltered().length && els.catalog) {
+          els.catalog.value = 'all';
+          if (els.search) els.search.value = '';
+          render();
+        }
+        try { restoreScroll(); } catch (e) {}
+        if (els.status) {
+          els.status.style.display = 'none';
+        }
+      } else if (els.status) {
+        els.status.className = 'status';
+        els.status.style.display = 'block';
+        els.status.textContent = 'Загрузка каталога...';
+      }
+
+      // 3) Обновление из Google Таблицы (если есть интернет)
+      loadProducts().then(function() {
+        if (allProducts.length) {
+          try { restoreListState(); } catch (e) {}
+          render();
+          if (!getFiltered().length && els.catalog) {
+            els.catalog.value = 'all';
+            if (els.search) els.search.value = '';
+            render();
+          }
+          try { restoreScroll(); } catch (e) {}
+          if (els.status) els.status.style.display = 'none';
+        } else if (els.status) {
+          els.status.className = 'status error';
+          els.status.style.display = 'block';
+          els.status.textContent = 'Каталог пуст. Проверьте Google Таблицу и доступ «Все, у кого есть ссылка».';
+        }
+      }).catch(function() {
+        if (!allProducts.length && els.status) {
+          els.status.className = 'status error';
+          els.status.style.display = 'block';
+          els.status.textContent = 'Не удалось загрузить каталог. Нужен файл products-nasosy.js рядом с этой страницей или доступ к таблице.';
+        }
+      });
+    }
+
+    bootCatalog();
+
+  </script>
+
+  <button type="button" class="scroll-top" id="scrollTop" title="Наверх" aria-label="Наверх">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 14 12 8 18 14"/></svg>
+  </button>
+
+<script>/*ae-scroll-top*/
+
+    (function(){
+      var btn = document.getElementById('scrollTop');
+      if (!btn) return;
+      window.addEventListener('scroll', function(){
+        if (window.scrollY > 300) btn.classList.add('show'); else btn.classList.remove('show');
+      });
+      btn.addEventListener('click', function(){
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    })();
+
+</script>
+</body>
+</html>

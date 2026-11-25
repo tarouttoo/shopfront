@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Вариант 2 — ООО ИТЦ «Альтер Энерго» — Теплоэнергетика и инженерные системы</title>
+  <meta name="description" content="Проектирование и внедрение АСУ ТП на базе ОВЕН. Производство НКУ. Поставка оборудования для теплоэнергетики, монтаж, пусконаладка и сервис в Иркутске." />
+  <meta name="theme-color" content="#0d47a1" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230d47a1'/%3E%3Ctext x='32' y='43' font-family='Arial' font-size='24' font-weight='bold' fill='%23fff' text-anchor='middle'%3EAE%3C/text%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --primary: #0d47a1;
+      --primary-dark: #002171;
+      --primary-light: #5472d3;
+      --accent: #00acc1;
+      --accent-dark: #00838f;
+      --text: #1a1a2e;
+      --text-light: #5a5a7a;
+      --bg: #f5f7fa;
+      --white: #ffffff;
+      --gray: #e8ecf1;
+      --shadow: 0 4px 20px rgba(13, 71, 161, 0.08);
+      --shadow-hover: 0 15px 35px rgba(13, 71, 161, 0.15);
+      --radius: 14px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--text); line-height: 1.6; background: var(--white);
+      -webkit-font-smoothing: antialiased;
+    }
+    a { text-decoration: none; color: inherit; }
+    img { max-width: 100%; height: auto; display: block; }
+    .container { max-width: 1240px; margin: 0 auto; padding: 0 20px; }
+
+    /* HEADER */
+    header {
+      background: var(--white); box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+      position: sticky; top: 0; z-index: 1000;
+    }
+    .header-top {
+      background: var(--primary-dark); color: #fff; font-size: 14px; padding: 8px 0;
+    }
+    .header-top .container {
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 10px;
+    }
+    .header-top a {
+      color: rgba(255,255,255,0.9); display: inline-flex; align-items: center; gap: 6px;
+      transition: color 0.2s;
+    }
+    .header-top a:hover { color: #fff; }
+    .header-top svg { width: 15px; height: 15px; flex-shrink: 0; }
+    .header-main {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 0; position: relative;
+    }
+    .logo {
+      display: flex; align-items: center; gap: 12px;
+      font-weight: 800; font-size: 1.25rem; color: var(--primary);
+    }
+    .logo-icon {
+      width: 46px; height: 46px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 20px; font-weight: 800;
+      box-shadow: 0 6px 16px rgba(13,71,161,0.25);
+    }
+    .logo-text { line-height: 1.15; }
+    .logo-text .brand { display: block; }
+    .logo-text .sub {
+      display: block; font-size: 11.5px; font-weight: 500;
+      color: var(--text-light); letter-spacing: 0.3px; margin-top: 2px;
+    }
+    nav { display: flex; gap: 22px; align-items: center; }
+    nav a {
+      font-weight: 500; font-size: 15px; color: var(--text);
+      transition: color 0.2s;
+    }
+    nav a:hover { color: var(--primary); }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 12px 22px; border-radius: 10px;
+      font-weight: 600; font-size: 15px;
+      transition: all 0.25s; cursor: pointer; border: none; white-space: nowrap;
+    }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover {
+      background: var(--primary-dark); transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(13,71,161,0.3);
+    }
+    .btn-accent { background: var(--accent); color: #fff; }
+    .btn-accent:hover { background: var(--accent-dark); transform: translateY(-1px); }
+    .btn-outline {
+      background: transparent; border: 2px solid var(--primary); color: var(--primary);
+    }
+    .btn-outline:hover { background: var(--primary); color: #fff; }
+    .btn-sm { padding: 9px 16px; font-size: 14px; }
+    .menu-toggle {
+      display: none; background: none; border: none; cursor: pointer;
+      color: var(--primary); padding: 4px; line-height: 1;
+    }
+    .menu-toggle svg { width: 28px; height: 28px; display: block; }
+    .menu-toggle .icon-close { display: none; }
+    .menu-toggle[aria-expanded="true"] .icon-menu { display: none; }
+    .menu-toggle[aria-expanded="true"] .icon-close { display: block; }
+
+    /* HERO */
+    .hero {
+      background: #0d47a1; color: #fff; padding: 70px 0 50px;
+      position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(13,71,161,0.94) 0%, rgba(21,101,192,0.85) 55%, rgba(0,131,143,0.9) 100%);
+    }
+    .hero .container {
+      position: relative; z-index: 2;
+      display: grid;
+      grid-template-columns: 1.2fr 0.9fr;
+      gap: 40px;
+      align-items: center;
+    }
+    .hero-left { text-align: left; }
+    .hero-left h1 {
+      font-size: 2.6rem; font-weight: 800; line-height: 1.15;
+      margin-bottom: 18px; text-shadow: 0 2px 12px rgba(0,0,0,0.2);
+    }
+    .hero-left p {
+      font-size: 1.08rem; opacity: 0.94; margin-bottom: 28px;
+      max-width: 520px; line-height: 1.6;
+    }
+    .hero-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .hero-stats .stat-card {
+      background: rgba(255,255,255,0.14);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 14px;
+      padding: 22px 16px;
+      text-align: center;
+    }
+    .hero-stats .stat-card .number {
+      font-size: 1.75rem; font-weight: 800; display: block; color: #fff;
+    }
+    .hero-stats .stat-card .label {
+      font-size: 0.82rem; opacity: 0.9; margin-top: 6px; color: #fff;
+    }
+    .hero-btns { display: flex; gap: 12px; flex-wrap: wrap; }
+    .hero h1 {
+      font-size: 2.6rem; font-weight: 800; line-height: 1.15;
+      margin-bottom: 16px; text-shadow: 0 2px 12px rgba(0,0,0,0.2);
+    }
+    .hero > .container > p {
+      font-size: 1.1rem; opacity: 0.94; margin: 0 auto 36px;
+      max-width: 640px; line-height: 1.6;
+    }
+    .entries {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 22px;
+      max-width: 920px; margin: 0 auto 40px;
+    }
+    .entry-card {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 16px; padding: 32px 28px;
+      text-align: left; color: #fff; transition: all 0.25s;
+      display: block;
+    }
+    .entry-card:hover {
+      background: rgba(255,255,255,0.2);
+      transform: translateY(-4px);
+    }
+    .entry-card .tag {
+      display: inline-block; font-size: 12px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.8px;
+      opacity: 0.85; margin-bottom: 12px;
+    }
+    .entry-card h3 { font-size: 1.4rem; font-weight: 700; margin-bottom: 10px; }
+    .entry-card p {
+      font-size: 0.95rem; opacity: 0.9; margin: 0 0 18px; line-height: 1.5;
+    }
+    .entry-card .link {
+      font-size: 14px; font-weight: 600;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .entry-card .link svg { width: 16px; height: 16px; }
+
+    .stats-bar {
+      background: var(--white); border-radius: 14px;
+      box-shadow: 0 10px 40px rgba(13,71,161,0.12);
+      padding: 26px 20px; max-width: 920px; margin: 0 auto;
+    }
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 16px; text-align: center;
+    }
+    .stat-item .number {
+      font-size: 1.85rem; font-weight: 800; color: var(--primary); display: block;
+    }
+    .stat-item .label { font-size: 0.88rem; color: var(--text-light); margin-top: 5px; }
+
+    /* SECTIONS */
+    section { padding: 80px 0; }
+    section[id] { scroll-margin-top: 110px; }
+    .section-title { text-align: center; margin-bottom: 48px; }
+    .section-title .kicker {
+      display: inline-block; font-size: 13px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1.2px;
+      color: var(--accent); margin-bottom: 12px;
+    }
+    .section-title h2 {
+      font-size: 2.1rem; font-weight: 800; margin-bottom: 12px; line-height: 1.2;
+    }
+    .section-title p {
+      color: var(--text-light); font-size: 1.05rem; max-width: 600px; margin: 0 auto;
+    }
+
+    /* ABOUT */
+    .about-section { background: var(--bg); }
+    .about-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center;
+    }
+    .about-grid p { color: var(--text-light); margin-bottom: 14px; }
+    .about-features {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px;
+    }
+    .feature-box {
+      padding: 18px; background: #fff; border-radius: 12px;
+      border-left: 3px solid var(--accent); box-shadow: var(--shadow);
+    }
+    .feature-box strong { display: block; font-size: 0.95rem; margin-bottom: 4px; }
+    .feature-box span { font-size: 0.85rem; color: var(--text-light); }
+
+    /* CONTACTS */
+    .map-wrapper {
+      border-radius: var(--radius); overflow: hidden;
+      box-shadow: var(--shadow); border: 1px solid var(--gray);
+      margin-bottom: 40px; line-height: 0;
+    }
+    .map-wrapper iframe { display: block; width: 100%; height: 360px; border: 0; }
+    .contacts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; }
+    .contact-info h3 { font-size: 1.35rem; margin-bottom: 22px; color: var(--primary); }
+    .contact-item { display: flex; gap: 14px; margin-bottom: 18px; align-items: flex-start; }
+    .contact-item .icon {
+      width: 42px; height: 42px; background: rgba(13,71,161,0.1);
+      border-radius: 10px; display: flex; align-items: center; justify-content: center;
+      color: var(--primary); flex-shrink: 0;
+    }
+    .contact-item .icon svg { width: 20px; height: 20px; }
+    .contact-item strong { display: block; margin-bottom: 3px; font-size: 0.94rem; }
+    .contact-item span, .contact-item a { color: var(--text-light); font-size: 0.92rem; line-height: 1.5; }
+    .contact-item a:hover { color: var(--primary); }
+    .contact-form {
+      background: #fff; padding: 32px; border-radius: var(--radius);
+      box-shadow: var(--shadow); border: 1px solid var(--gray);
+    }
+    .contact-form h3 { margin-bottom: 18px; font-size: 1.25rem; }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 0.88rem; font-weight: 500; margin-bottom: 5px; }
+    .form-group input, .form-group textarea {
+      width: 100%; padding: 12px 14px; border: 1px solid #d0d5dd;
+      border-radius: 8px; font-size: 15px; font-family: inherit;
+      background: #f9fafb; transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .form-group input:focus, .form-group textarea:focus {
+      outline: none; border-color: var(--primary); background: #fff;
+      box-shadow: 0 0 0 3px rgba(13,71,161,0.12);
+    }
+    .form-group textarea { resize: vertical; min-height: 100px; }
+    .checkbox-label {
+      display: flex !important; align-items: flex-start; gap: 10px;
+      font-size: 0.83rem !important; font-weight: 400 !important;
+      color: var(--text-light); cursor: pointer; line-height: 1.45;
+    }
+    .checkbox-label input[type="checkbox"] {
+      width: 17px; height: 17px; margin-top: 2px;
+      accent-color: var(--primary); flex-shrink: 0;
+    }
+    .checkbox-label a { color: var(--primary); text-decoration: underline; }
+
+    /* FOOTER */
+    footer { background: #0a1929; color: rgba(255,255,255,0.8); padding: 50px 0 28px; }
+    .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 40px; margin-bottom: 36px; }
+    .footer-brand .logo { color: #fff; margin-bottom: 14px; }
+    .footer-brand .logo-text .sub { color: rgba(255,255,255,0.55); }
+    .footer-brand p { font-size: 0.92rem; line-height: 1.7; max-width: 340px; }
+    .footer-col h4 { color: #fff; margin-bottom: 16px; font-size: 1rem; }
+    .footer-col a { display: block; margin-bottom: 10px; font-size: 0.92rem; transition: color 0.2s; }
+    .footer-col a:hover { color: #fff; }
+    .footer-bottom {
+      border-top: 1px solid rgba(255,255,255,0.1); padding-top: 22px;
+      display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; font-size: 0.85rem;
+    }
+
+    /* SCROLL TOP */
+    .scroll-top {
+      position: fixed; bottom: 28px; right: 28px;
+      width: 48px; height: 48px; border-radius: 50%;
+      background: var(--primary); color: #fff;
+      display: flex !important; align-items: center; justify-content: center;
+      border: none; cursor: pointer; z-index: 1100;
+      box-shadow: 0 4px 15px rgba(13,71,161,0.3);
+      opacity: 0; visibility: hidden; transform: translateY(16px);
+      transition: all 0.3s;
+      pointer-events: none;
+    }
+    .scroll-top.show { opacity: 1 !important; visibility: visible !important; transform: translateY(0); pointer-events: auto; }
+    .scroll-top:hover { background: var(--primary-dark); }
+    .scroll-top svg { width: 22px; height: 22px; }
+
+    /* REVEAL */
+    .reveal {
+      opacity: 0; transform: translateY(22px);
+      transition: opacity .6s ease, transform .6s ease;
+    }
+    .reveal.visible { opacity: 1; transform: none; }
+
+    @media (max-width: 1024px) {
+      .about-grid, .contacts-grid { grid-template-columns: 1fr; }
+      .entries { grid-template-columns: 1fr; max-width: 480px; }
+      .footer-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 900px) {
+      .hero .container { grid-template-columns: 1fr; }
+      .hero-left { text-align: center; }
+      .hero-left p { margin-left: auto; margin-right: auto; }
+      .hero-stats { max-width: 340px; margin: 24px auto 0; }
+    }
+    @media (max-width: 768px) {
+      .menu-toggle { display: block; }
+      div[style*="grid-template-columns:repeat(4"] { grid-template-columns: 1fr 1fr !important; }
+      nav {
+        display: none; position: absolute; top: 100%; left: -20px; right: -20px;
+        flex-direction: column; align-items: stretch; gap: 0;
+        padding: 8px 20px 20px; background: #fff; border-top: 1px solid var(--gray);
+        box-shadow: 0 16px 32px rgba(13,71,161,0.12); z-index: 999;
+      }
+      nav.open { display: flex; }
+      nav a { padding: 14px 0; border-bottom: 1px solid var(--gray); text-align: left; }
+      nav a.btn { border-bottom: none; margin-top: 12px; padding: 12px 20px; text-align: center; }
+      .hero h1 { font-size: 2rem; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .footer-grid { grid-template-columns: 1fr; }
+    }
+  
+    .dir-card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 26px 20px;
+      box-shadow: 0 10px 35px rgba(13,71,161,0.1);
+      border: 1px solid #e8ecf1;
+      display: block;
+      transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .dir-card::after {
+      content: 'Смотреть →';
+      position: absolute;
+      right: 18px;
+      bottom: 18px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #0d47a1;
+      opacity: 0;
+      transform: translateX(-8px);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+    .dir-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 18px 40px rgba(13,71,161,0.18);
+      border-color: #0d47a1;
+    }
+    .dir-card:hover::after {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    .dir-card .dir-num {
+      font-size: 13px;
+      font-weight: 700;
+      color: #00acc1;
+      margin-bottom: 10px;
+    }
+    .dir-card h3 {
+      font-size: 1.12rem;
+      font-weight: 700;
+      color: #002171;
+      margin-bottom: 8px;
+    }
+    .dir-card p {
+      font-size: 0.88rem;
+      color: #5a5a7a;
+      margin: 0;
+      line-height: 1.45;
+      padding-bottom: 18px;
+    }
+    @media (max-width: 900px) {
+      .dir-grid { grid-template-columns: 1fr 1fr !important; }
+    }
+    @media (max-width: 560px) {
+      .dir-grid { grid-template-columns: 1fr !important; }
+    }
+
+  
+    .hero-more {
+      display: inline;
+      margin-left: 6px;
+      color: #fff;
+      font-weight: 600;
+      text-decoration: underline;
+      text-underline-offset: 4px;
+      text-decoration-thickness: 1.5px;
+      white-space: nowrap;
+      transition: opacity 0.2s;
+    }
+    .hero-more:hover {
+      opacity: 0.85;
+    }
+
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div class="container">
+      <div>
+        <a href="tel:+73952611011">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          +7 (3952) 61-10-11
+        </a>
+        &nbsp;|&nbsp;
+        <a href="tel:+73952725715">+7 (3952) 72-57-15</a>
+      </div>
+      <div>
+        <a href="mailto:ae38@list.ru">ae38@list.ru</a>
+        &nbsp;|&nbsp; г. Иркутск, ул. Клары Цеткин, 9а
+      </div>
+    </div>
+  </div>
+  <div class="container header-main">
+    <a href="index.html" class="logo">
+      <div class="logo-icon">АЭ</div>
+      <div class="logo-text">
+        <span class="brand">Альтер Энерго</span>
+        <span class="sub">ИТЦ · Иркутск</span>
+      </div>
+    </a>
+    <nav id="main-nav">
+      <a href="nasosy.html">Насосы</a>
+      <a href="avtomatika.html">Автоматика</a>
+      <a href="kotly.html">Котлы</a>
+      <a href="gorelki.html">Горелки</a>
+      <a href="resheniya.html">Решения</a>
+      <a href="#about">О компании</a>
+      <a href="#contacts" class="btn btn-primary btn-sm">Оставить заявку</a>
+    </nav>
+    <button class="menu-toggle" aria-label="Меню" aria-expanded="false" aria-controls="main-nav">
+      <svg class="icon-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      <svg class="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+</header>
+
+<main>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-left">
+        <h1>Инженерные решения для теплоэнергетики</h1>
+        <p>Решения под ключ: проектирование, поставка, монтаж, пусконаладка и сервис. Работаем с Истратех, ОВЕН и другими производителями.
+          <a href="resheniya.html" class="hero-more">Подробнее →</a>
+        </p>
+        <div class="hero-btns" style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
+          <a href="#contacts" class="btn btn-accent">Получить консультацию</a>
+        </div>
+      </div>
+      <div class="hero-stats">
+        <div class="stat-card">
+          <span class="number" data-target="19">0</span>
+          <span class="label">лет на рынке</span>
+        </div>
+        <div class="stat-card">
+          <span class="number" data-target="2007">0</span>
+          <span class="label">год основания</span>
+        </div>
+        <div class="stat-card">
+          <span class="number">100%</span>
+          <span class="label">российский фокус</span>
+        </div>
+        <div class="stat-card">
+          <span class="number">СРО</span>
+          <span class="label">два допуска</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+    <!-- DIRECTIONS V2 -->
+  <div class="container" style="margin-top:-40px;position:relative;z-index:10;padding-bottom:10px;">
+    <div class="dir-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:18px;">
+      <a href="nasosy.html" class="dir-card">
+        <div class="dir-num">01</div>
+        <h3>Насосы</h3>
+        <p>Истратех и другое насосное оборудование. Подбор и поставка.</p>
+      </a>
+      <a href="avtomatika.html" class="dir-card">
+        <div class="dir-num">02</div>
+        <h3>Автоматика</h3>
+        <p>ОВЕН, ПЛК, КИПиА. Производство НКУ и шкафов управления.</p>
+      </a>
+      <a href="kotly.html" class="dir-card">
+        <div class="dir-num">03</div>
+        <h3>Котлы</h3>
+        <p>Котельное оборудование для котельных и ИТП.</p>
+      </a>
+      <a href="gorelki.html" class="dir-card">
+        <div class="dir-num">04</div>
+        <h3>Горелки</h3>
+        <p>Газовые, дизельные и комбинированные горелки.</p>
+      </a>
+    </div>
+  </div>
+
+  
+
+  <!-- ABOUT -->
+  <section class="about-section" id="about">
+    <div class="container">
+      <div class="section-title">
+        <span class="kicker">О компании</span>
+        <h2>ООО ИТЦ «Альтер Энерго»</h2>
+        <p>Инженерно-технический центр с опытом работы с 2007 года. Иркутск и Иркутская область.</p>
+      </div>
+      <div class="about-grid">
+        <div>
+          <p>Мы специализируемся на комплексных решениях в области теплоэнергетики и промышленной автоматизации. Выполняем полный цикл работ — от проектирования до пусконаладки и сервисного обслуживания.</p>
+          <p>Используем современное российское оборудование (включая ОВЕН и Истратех) и решения для модернизации существующих объектов. Работаем с промышленностью, ЖКХ и коммерческими объектами.</p>
+          <div class="about-features">
+            <div class="feature-box">
+              <strong>СРО (Строительство)</strong>
+              <span>Допуск к работам по договорам подряда</span>
+            </div>
+            <div class="feature-box">
+              <strong>СРО (Проектирование)</strong>
+              <span>Разработка проектной документации</span>
+            </div>
+          </div>
+        </div>
+        <div style="background:#fff;border-radius:16px;padding:36px;box-shadow:var(--shadow);">
+          <h3 style="margin-bottom:18px;color:var(--primary);">Ключевые направления</h3>
+          <ul style="list-style:none;color:var(--text-light);">
+            <li style="padding:10px 0;border-bottom:1px solid var(--gray);">— Модернизация существующих объектов</li>
+            <li style="padding:10px 0;border-bottom:1px solid var(--gray);">— Наладка и пусконаладочные работы (ПНР)</li>
+            <li style="padding:10px 0;border-bottom:1px solid var(--gray);">— Ремонтно-наладочные испытания</li>
+            <li style="padding:10px 0;border-bottom:1px solid var(--gray);">— Автоматизация котельных и ИТП</li>
+            <li style="padding:10px 0;">— Внедрение систем диспетчеризации</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACTS -->
+  <section id="contacts">
+    <div class="container">
+      <div class="section-title">
+        <span class="kicker">Контакты</span>
+        <h2>Свяжитесь с нами</h2>
+        <p>Позвоните, напишите или оставьте заявку — ответим в рабочее время.</p>
+      </div>
+      <div class="map-wrapper">
+        <iframe src="https://yandex.ru/map-widget/v1/?ll=104.256634%2C52.277113&z=16&pt=104.256634,52.277113,pm2rdm" width="100%" height="360" frameborder="0" allowfullscreen loading="lazy" title="Карта: Иркутск, ул. Клары Цеткин, 9а"></iframe>
+      </div>
+      <div class="contacts-grid">
+        <div class="contact-info">
+          <h3>ООО ИТЦ «Альтер Энерго»</h3>
+          <div class="contact-item">
+            <div class="icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            </div>
+            <div><strong>Адрес</strong><span>г. Иркутск, ул. Клары Цеткин, 9а лит. В, офис 441</span></div>
+          </div>
+          <div class="contact-item">
+            <div class="icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            </div>
+            <div><strong>Телефоны</strong><a href="tel:+73952611011">+7 (3952) 61-10-11</a><br><a href="tel:+73952725715">+7 (3952) 72-57-15</a></div>
+          </div>
+          <div class="contact-item">
+            <div class="icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>
+            </div>
+            <div><strong>Email</strong><a href="mailto:ae38@list.ru">ae38@list.ru</a></div>
+          </div>
+          <div class="contact-item">
+            <div class="icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div><strong>Режим работы</strong><span>Пн–Пт: 10:00–18:00</span></div>
+          </div>
+        </div>
+        <div class="contact-form">
+          <h3>Оставить заявку</h3>
+          <form id="contact-form" novalidate>
+            <div class="form-group">
+              <label>Ваше имя *</label>
+              <input type="text" placeholder="Иван Иванов">
+            </div>
+            <div class="form-group">
+              <label>Телефон *</label>
+              <input type="tel" placeholder="+7 (___) ___-__-__">
+            </div>
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" placeholder="email@example.com">
+            </div>
+            <div class="form-group">
+              <label>Комментарий</label>
+              <textarea placeholder="Опишите задачу..."></textarea>
+            </div>
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input type="checkbox" name="agreement">
+                <span>Согласен на обработку персональных данных и принимаю <a href="privacy.html" target="_blank">политику конфиденциальности</a></span>
+              </label>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%;">Отправить</button>
+          </form>
+          <div id="form-message" style="margin-top:14px;font-size:0.92rem;font-weight:500;display:none;"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="index.html" class="logo">
+          <div class="logo-icon">АЭ</div>
+          <div class="logo-text"><span class="brand">Альтер Энерго</span></div>
+        </a>
+        <p>Инженерно-технический центр. Проектирование, монтаж и автоматизация систем отопления, водоснабжения и энергоэффективности в Иркутске.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Навигация</h4>
+        <a href="nasosy.html">Насосы</a>
+        <a href="avtomatika.html">Автоматика</a>
+        <a href="kotly.html">Котлы и горелки</a>
+        <a href="resheniya.html">Решения</a>
+        <a href="#about">О компании</a>
+        <a href="#contacts">Контакты</a>
+      </div>
+      <div class="footer-col">
+        <h4>Контакты</h4>
+        <a href="tel:+73952611011">+7 (3952) 61-10-11</a>
+        <a href="tel:+73952725715">+7 (3952) 72-57-15</a>
+        <a href="mailto:ae38@list.ru">ae38@list.ru</a>
+        <a href="#contacts">г. Иркутск</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div>© 2007–2026 ООО ИТЦ «Альтер Энерго». Все права защищены.</div>
+      <div>ИНН 3812097834 · ОГРН 1073812005706</div>
+    </div>
+  </div>
+</footer>
+
+<button class="scroll-top" id="scrollTopBtn" aria-label="Наверх">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+</button>
+
+<script>
+  // Mobile menu
+  const nav = document.getElementById('main-nav');
+  const toggle = document.querySelector('.menu-toggle');
+  function closeMenu() { nav.classList.remove('open'); toggle.setAttribute('aria-expanded', 'false'); }
+  toggle.addEventListener('click', () => {
+    const open = nav.classList.toggle('open');
+    toggle.setAttribute('aria-expanded', String(open));
+  });
+  nav.querySelectorAll('a').forEach(a => a.addEventListener('click', closeMenu));
+
+  // Smooth scroll for anchors
+  document.querySelectorAll('a[href^="#"]').forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      const target = document.querySelector(link.getAttribute('href'));
+      if (target) {
+        const y = target.getBoundingClientRect().top + window.pageYOffset - 80;
+        window.scrollTo({ top: y, behavior: 'smooth' });
+      }
+    });
+  });
+
+  // Reveal
+  const revealTargets = document.querySelectorAll('.section-title, .feature-box, .about-grid > div, .contact-info, .contact-form, .entry-card');
+  revealTargets.forEach((el, i) => {
+    el.classList.add('reveal');
+    el.style.transitionDelay = (i % 4) * 60 + 'ms';
+  });
+  const revealIO = new IntersectionObserver(entries => {
+    entries.forEach(en => {
+      if (en.isIntersecting) { en.target.classList.add('visible'); revealIO.unobserve(en.target); }
+    });
+  }, { threshold: 0.12 });
+  revealTargets.forEach(el => revealIO.observe(el));
+
+  // Count-up
+  function countUp(el) {
+    const target = +el.dataset.target;
+    if (!target) return;
+    const duration = 1400;
+    const t0 = performance.now();
+    (function tick(now) {
+      const p = Math.min((now - t0) / duration, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      el.textContent = Math.round(target * eased) + (target === 19 ? '+' : '');
+      if (p < 1) requestAnimationFrame(tick);
+    })(t0);
+  }
+  const statNumbers = document.querySelectorAll('.stat-card .number[data-target], .stat-item .number[data-target]');
+  const statIO = new IntersectionObserver(entries => {
+    entries.forEach(en => {
+      if (en.isIntersecting) { countUp(en.target); statIO.unobserve(en.target); }
+    });
+  }, { threshold: 0.5 });
+  statNumbers.forEach(el => statIO.observe(el));
+
+  // Scroll top
+  const scrollTopBtn = document.getElementById('scrollTopBtn');
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 500) scrollTopBtn.classList.add('show');
+    else scrollTopBtn.classList.remove('show');
+  });
+  scrollTopBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+  // Form
+  
+
+  
+  
+  
+
+
+  function handleFormSubmit(e) {
+    e.preventDefault();
+    const form = e.target;
+    let msg = form.parentElement.querySelector('#form-message') || document.getElementById('form-message');
+    if (!msg) {
+      msg = document.createElement('div');
+      msg.id = 'form-message';
+      msg.style.cssText = 'margin-top:14px;font-size:0.92rem;font-weight:500;';
+      form.parentElement.appendChild(msg);
+    }
+    const nameInput = form.querySelector('input[type="text"]');
+    const phoneInput = form.querySelector('input[type="tel"]');
+    const emailInput = form.querySelector('input[type="email"]');
+    const agreeInput = form.querySelector('input[type="checkbox"]');
+    const commentInput = form.querySelector('textarea');
+    const errors = [];
+    if (nameInput && !nameInput.value.trim()) errors.push('имя');
+    const hasPhone = phoneInput && phoneInput.value.trim();
+    const hasEmail = emailInput && emailInput.value.trim();
+    if (!hasPhone && !hasEmail) errors.push('телефон или email');
+    if (agreeInput && !agreeInput.checked) errors.push('согласие на обработку данных');
+    if (errors.length) {
+      msg.style.display = 'block';
+      msg.style.color = '#c62828';
+      msg.textContent = 'Заполните: ' + errors.join(', ');
+      return;
+    }
+    msg.style.display = 'block';
+    msg.style.color = '#5a5a7a';
+    msg.textContent = 'Отправка...';
+    const payload = {
+      access_key: 'f055fbbd-e7da-4d53-8b84-e9caa65a390b',
+      subject: 'Заявка с сайта Альтер Энерго',
+      from_name: 'Сайт Альтер Энерго',
+      name: nameInput ? nameInput.value.trim() : '',
+      phone: phoneInput ? phoneInput.value.trim() : '',
+      email: emailInput && emailInput.value.trim() ? emailInput.value.trim() : 'Не указан',
+      message: commentInput ? commentInput.value.trim() : '',
+      agreement: 'Да'
+    };
+    fetch('https://api.web3forms.com/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(r => r.json()).then(data => {
+      if (!data.success) throw new Error(data.message || 'fail');
+      msg.style.color = '#2e7d32';
+      msg.textContent = 'Заявка отправлена! Мы свяжемся с вами.';
+      form.reset();
+    }).catch(err => {
+      console.error(err);
+      msg.style.color = '#c62828';
+      msg.textContent = 'Не удалось отправить. Попробуйте ещё раз или позвоните нам.';
+    });
+  }
+  
+  document.querySelectorAll('form').forEach(function(f) {
+    f.addEventListener('submit', handleFormSubmit);
+  });
+
+</script>
+
+  
+  <button type="button" class="scroll-top" id="scrollTop" title="Наверх" aria-label="Наверх">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 14 12 8 18 14"/></svg>
+  </button>
+  <script src="cart-order.js"></script>
+  <script>
+    (function () {
+      function bindScrollTop() {
+        var btn = document.getElementById('scrollTop');
+        if (!btn) return;
+        function sync() {
+          if (window.scrollY > 300) btn.classList.add('show');
+          else btn.classList.remove('show');
+        }
+        window.addEventListener('scroll', sync, { passive: true });
+        btn.addEventListener('click', function () {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+        sync();
+      }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bindScrollTop);
+      else bindScrollTop();
+    })();
+  </script>
+</body>
+</html>
