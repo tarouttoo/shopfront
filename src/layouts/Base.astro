@@ -18,9 +18,9 @@ const {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <!-- Draft until the client approves publication: keep every search
-         engine out (ADR 0020, 0021). robots.txt disallows as well. -->
-    <meta name="robots" content="noindex, nofollow" />
+    <!-- Public and indexable (ADR 0022 lifted ADR 0020/0021's
+         until-approval gate): no robots meta, robots.txt allows, and
+         the sitemap integration lists every page. -->
     <meta name="description" content={description} />
     <title>{title}</title>
   </head>
