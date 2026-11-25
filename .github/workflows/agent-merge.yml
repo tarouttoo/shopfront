@@ -1,0 +1,124 @@
+name: Agent Merge Spec
+
+# The merger (ADR 0019, course lesson 102 design two): waves of completed
+# Spec-Ticket branches get merged into the Spec's Integration Branch, the
+# Tickets get closed (their close events re-fire agent-convert — the next
+# wave's frontier; the close goes out with AGENT_PAT — events fired by
+# GITHUB_TOKEN never start workflows), and when the last Ticket closes,
+# ONE draft PR Spec → main opens and is labelled `agent:review` — the
+# existing review + auto-merge chain takes it from there.
+#
+# Triggers: a push to any agent ticket branch (implement runs push without
+# a PR in the v2 flow — each push is a "maybe a wave completed" pulse), and
+# a manual workflow_dispatch accelerator. Standalone-chain branches reach
+# this workflow too (update-branch pushes, standalone PR branches); the
+# resolve step checks the parent and exits for anything that is not a Spec
+# Ticket's branch.
+#
+# All merger runs serialize repo-wide (one concurrency group): the barrier
+# and the integration branch are per-Spec, so per-Spec groups would race.
+on:
+  push:
+    branches:
+      - "agent/issue-*"
+  workflow_dispatch:
+    inputs:
+      spec:
+        description: "Spec issue number to advance (merge ready waves; open the integration PR when complete)."
+        required: true
+
+concurrency:
+  group: agent-merge
+  cancel-in-progress: false
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+      # Provider/model config lives here, not in code. Consumed by
+      # agentFromEnv() in .sandcastle/agent-workflows/shared/common.ts.
+      AGENT_PROVIDER: zai
+      AGENT_MODEL: glm-5.3-flash:max
+
+    steps:
+      - name: Resolve spec
+        id: spec
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_SPEC: ${{ inputs.spec }}
+          BRANCH_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "spec=$INPUT_SPEC" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          n=$(echo "$BRANCH_NAME" | sed -E 's#^agent/issue-([0-9]+)-.*$#\1#')
+          owner="${GH_REPO%/*}"
+          repo="${GH_REPO#*/}"
+          parent=$(gh api graphql \
+            -f query='query($owner: String!, $repo: String!, $num: Int!) { repository(owner: $owner, name: $repo) { issue(number: $num) { parent { number } } } }' \
+            -f owner="$owner" -f repo="$repo" -F num="$n" \
+            --jq '.data.repository.issue.parent.number // empty' 2>/dev/null || echo "")
+          echo "spec=$parent" >> "$GITHUB_OUTPUT"
+
+      - name: Skip non-Spec branches
+        if: steps.spec.outputs.spec == ''
+        run: |
+          echo "Branch is not a Spec Ticket's branch (or standalone chain) — nothing to merge."
+
+      - name: Checkout main
+        if: steps.spec.outputs.spec != ''
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          # Checkout credentials persist into git push: the integration
+          # branch push must be allowed to move .github/workflows/* files.
+          token: ${{ secrets.AGENT_PAT || secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        if: steps.spec.outputs.spec != ''
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        if: steps.spec.outputs.spec != ''
+        run: npm ci
+
+      - name: Install pi CLI
+        if: steps.spec.outputs.spec != ''
+        run: npm install -g --ignore-scripts @earendil-works/pi-coding-agent
+
+      - name: Run merger
+        if: steps.spec.outputs.spec != ''
+        env:
+          ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
+          AGENT_PAT: ${{ secrets.AGENT_PAT }}
+          SPEC_NUMBER: ${{ steps.spec.outputs.spec }}
+          OUTPUT_DIR: ${{ runner.temp }}
+        run: npx tsx .sandcastle/agent-workflows/merge-spec/merge-spec.ts
+
+      - name: Mark blocked on failure
+        if: failure() && steps.spec.outputs.spec != ''
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SPEC_ISSUE: ${{ steps.spec.outputs.spec }}
+        run: |
+          reason="(no reason file written; check workflow logs)"
+          if [ -f "${RUNNER_TEMP}/failure_reason.txt" ]; then
+            reason=$(cat "${RUNNER_TEMP}/failure_reason.txt")
+          fi
+          body_file="${RUNNER_TEMP}/failure-comment.md"
+          printf 'Merger run for Spec #%s failed.\n\n**Reason:** %s\n\n**Workflow run:** %s\n\nRetry with: `gh workflow run agent-merge.yml -f spec=%s`.\n' "$SPEC_ISSUE" "$reason" "$RUN_URL" "$SPEC_ISSUE" > "$body_file"
+          gh issue edit "$SPEC_ISSUE" --add-label "agent:blocked" || true
+          gh issue comment "$SPEC_ISSUE" --body-file "$body_file"

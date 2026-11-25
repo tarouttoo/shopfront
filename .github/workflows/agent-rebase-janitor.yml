@@ -1,0 +1,96 @@
+name: Agent Rebase Janitor
+
+# The Auto-Rebase janitor (ADR 0019; course lessons 95–96, adapted): when a
+# PR merges, other open agent PRs often become conflicting with the new
+# main. This deterministic sweep finds those PRs and labels them
+# `agent:update-branch` — the existing agent-update-branch.yml keeps doing
+# the actual resolving, with its lease/race logic. A deterministic script
+# rebase is deliberately not attempted here: it would duplicate that logic.
+#
+# Labels go out with AGENT_PAT: label events fired by GITHUB_TOKEN never
+# start other workflows (the same reason agent-convert.yml uses the PAT).
+#
+# Gate: Agent-quiet. If any agent run of the mutating workflows is in
+# flight (in progress or queued), the sweep exits silently — the next
+# trigger retries. Triggers: a PR merging (the moment conflicts are born)
+# and a nightly backup cron (catches conflicts that arise without a merge).
+on:
+  pull_request:
+    types: [closed]
+  schedule:
+    - cron: "30 2 * * *"
+
+concurrency:
+  group: agent-rebase-janitor
+  cancel-in-progress: false
+
+jobs:
+  sweep:
+    if: github.event_name == 'schedule' || github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      pull-requests: write
+
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+
+    steps:
+      - name: Agent-quiet gate
+        id: quiet
+        run: |
+          set -euo pipefail
+          for wf in agent-implement.yml agent-review.yml agent-update-branch.yml agent-convert.yml; do
+            for status in in_progress queued; do
+              count=$(gh run list --workflow "$wf" --status "$status" --limit 1 --json databaseId --jq 'length')
+              if [ "$count" != "0" ]; then
+                echo "quiet=false" >> "$GITHUB_OUTPUT"
+                echo "Agent-quiet gate: $wf has a $status run — exiting silently. The next trigger retries."
+                exit 0
+              fi
+            done
+          done
+          echo "quiet=true" >> "$GITHUB_OUTPUT"
+
+      - name: Find conflicting agent PRs
+        id: find
+        if: steps.quiet.outputs.quiet == 'true'
+        run: |
+          set -euo pipefail
+          # Head branches of agent PRs are agent/issue-<n>-<slug>; mergeable
+          # is MERGEABLE, CONFLICTING, or UNKNOWN (computed lazily — UNKNOWN
+          # entries get one direct re-check, and a still-UNKNOWN PR waits
+          # for the next trigger).
+          conflicting=$(gh pr list --state open --limit 500 \
+            --json number,headRefName,mergeable \
+            --jq '[.[] | select(.headRefName | test("^agent/issue-[0-9]+-"))]')
+          numbers=$(echo "$conflicting" | jq -r '[.[] | select(.mergeable == "CONFLICTING") | .number] | join(" ")')
+          unknown=$(echo "$conflicting" | jq -r '[.[] | select(.mergeable == "UNKNOWN") | .number] | join(" ")')
+          for n in $unknown; do
+            m=$(gh pr view "$n" --json mergeable --jq .mergeable)
+            if [ "$m" = "CONFLICTING" ]; then
+              numbers="$numbers $n"
+            fi
+          done
+          numbers=$(echo "$numbers" | xargs)
+          echo "numbers=$numbers" >> "$GITHUB_OUTPUT"
+          echo "Conflicting agent PRs: ${numbers:-none}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Label for update-branch
+        if: steps.quiet.outputs.quiet == 'true' && steps.find.outputs.numbers != ''
+        env:
+          NUMBERS: ${{ steps.find.outputs.numbers }}
+          AGENT_PAT: ${{ secrets.AGENT_PAT }}
+        run: |
+          set -euo pipefail
+          for n in $NUMBERS; do
+            # The PAT is the point: a GITHUB_TOKEN label event would not
+            # start agent-update-branch.yml.
+            if [ -n "$AGENT_PAT" ]; then
+              GH_TOKEN="$AGENT_PAT" gh pr edit "$n" --add-label "agent:update-branch"
+            else
+              gh pr edit "$n" --add-label "agent:update-branch"
+            fi
+            echo "Labeled #$n agent:update-branch" >> "$GITHUB_STEP_SUMMARY"
+          done

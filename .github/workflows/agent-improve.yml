@@ -1,0 +1,69 @@
+name: Agent Improve Architecture
+
+# Improve-architecture on demand (ADR 0019; course lessons 91–92): a
+# workflow_dispatch button, no schedule at all. The runner scans the repo
+# with the vendored /improve-codebase-architecture skill
+# (.agents/skills/improve-codebase-architecture/), dedupes against open
+# `improvement`-labelled issues and creates at most 5 issues per run.
+#
+# Improvements always wait for a human: nothing here adds
+# `ready-for-agent` or `agent:explore` — a human reviews the issues and
+# drives them into the pipeline themselves (label `agent:implement`, or
+# `spec` + `agent:implement` to have to-tickets decompose them).
+#
+# There is no subject issue to relabel, so a failed run just fails loudly
+# in Actions (with a failure summary); rerun the button.
+on:
+  workflow_dispatch:
+    inputs:
+      focus:
+        description: "Optional focus: a module, subsystem or pain point to concentrate the scan on."
+        required: false
+        default: ""
+
+concurrency:
+  group: agent-improve
+  cancel-in-progress: false
+
+jobs:
+  improve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      issues: write
+
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+      # Provider/model config lives here, not in code. Consumed by
+      # agentFromEnv() in .sandcastle/agent-workflows/shared/common.ts.
+      AGENT_PROVIDER: zai
+      AGENT_MODEL: glm-5.3-flash:max
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install pi CLI
+        run: npm install -g --ignore-scripts @earendil-works/pi-coding-agent
+
+      - name: Run improve agent
+        env:
+          ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
+          # Issue creation and labelling ride the PAT (ADR 0019).
+          AGENT_PAT: ${{ secrets.AGENT_PAT }}
+          OUTPUT_DIR: ${{ runner.temp }}
+        run: npx tsx .sandcastle/agent-workflows/improve/improve.ts

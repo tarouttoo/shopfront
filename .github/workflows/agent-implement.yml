@@ -1,0 +1,281 @@
+name: Agent Implement
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  implement:
+    if: github.event.label.name == 'agent:implement'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    concurrency:
+      group: agent-implement-issue-${{ github.event.issue.number }}
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+
+    env:
+      ISSUE_NUMBER: ${{ github.event.issue.number }}
+      ISSUE_TITLE: ${{ github.event.issue.title }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+      # Provider/model config lives here, not in code (tune cost and quality
+      # by editing env vars only). Consumed by agentFromEnv() in
+      # .sandcastle/agent-workflows/shared/common.ts.
+      AGENT_PROVIDER: zai
+      AGENT_MODEL: glm-5.3-flash:max
+      # The provider plan caps simultaneous agent runs (empirically 3: a
+      # 4th and 5th died at start; the key is shared with the operator's
+      # local sessions). to-tickets validates the plan's widest wave
+      # against this.
+      AGENT_CONCURRENCY: "3"
+
+    steps:
+      # Route by issue shape (ADR 0019, delta №1): a Spec with Tickets goes
+      # to the exploration-notes runner; a ticketless Spec goes to the
+      # to-tickets runner (AFK decomposition) when marked `spec` or titled
+      # `Spec: …` (the marker is canonical, the title the safety net); an
+      # issue without sub-issues implements (its parent Spec, if any, is
+      # pulled in as context).
+      - name: Detect issue shape
+        id: shape
+        run: |
+          set -euo pipefail
+          sub_count=$(gh api "repos/${GH_REPO}/issues/${ISSUE_NUMBER}/sub_issues" --jq 'length' 2>/dev/null || echo "0")
+          owner="${GH_REPO%/*}"
+          repo="${GH_REPO#*/}"
+          parent_number=$(gh api graphql \
+            -f query='query($owner: String!, $repo: String!, $num: Int!) { repository(owner: $owner, name: $repo) { issue(number: $num) { parent { number } } } }' \
+            -f owner="$owner" -f repo="$repo" -F num="$ISSUE_NUMBER" \
+            --jq '.data.repository.issue.parent.number // empty' 2>/dev/null || echo "")
+          has_spec_label=$(gh issue view "$ISSUE_NUMBER" --json labels --jq 'any(.labels[]; .name == "spec")')
+          title_is_spec=$(printf '%s' "$ISSUE_TITLE" | grep -qiE '^spec:' && echo true || echo false)
+          if [ "$sub_count" != "0" ]; then
+            route="spec-explore"
+          elif [ "$has_spec_label" = "true" ] || [ "$title_is_spec" = "true" ]; then
+            route="to-tickets"
+          else
+            route="implement"
+          fi
+          echo "sub_count=$sub_count" >> "$GITHUB_OUTPUT"
+          echo "parent_number=$parent_number" >> "$GITHUB_OUTPUT"
+          echo "route=$route" >> "$GITHUB_OUTPUT"
+
+      - name: Preflight existing PR
+        if: steps.shape.outputs.route == 'implement'
+        id: preflight
+        run: |
+          set -euo pipefail
+          existing=$(gh pr list \
+            --state open \
+            --search "in:body \"#${ISSUE_NUMBER}\"" \
+            --json number,url,body,author \
+            --jq "[.[] | select(.body | test(\"(?i)(closes|fixes|resolves)\\\\s+#${ISSUE_NUMBER}\\\\b\"))]")
+          count=$(echo "$existing" | jq 'length')
+          refused=false
+          existing_pr_url=""
+          for i in $(seq 0 $((count - 1))); do
+            author=$(echo "$existing" | jq -r ".[$i].author.login")
+            # Only PRs from collaborators block the agent; outside contributors don't count.
+            if gh api "repos/${GH_REPO}/collaborators/${author}" --silent 2>/dev/null; then
+              refused=true
+              existing_pr_url=$(echo "$existing" | jq -r ".[$i].url")
+              break
+            fi
+          done
+          echo "refused=$refused" >> "$GITHUB_OUTPUT"
+          echo "existing_pr_url=$existing_pr_url" >> "$GITHUB_OUTPUT"
+
+      - name: Refuse existing PR
+        if: steps.shape.outputs.route == 'implement' && steps.preflight.outputs.refused == 'true'
+        env:
+          EXISTING_PR_URL: ${{ steps.preflight.outputs.existing_pr_url }}
+        run: |
+          gh issue edit "$ISSUE_NUMBER" --remove-label "agent:implement" || true
+          gh issue comment "$ISSUE_NUMBER" --body "Refused to run: $EXISTING_PR_URL already targets this issue. Close it first, then re-add \`agent:implement\`."
+
+      - name: Transition labels
+        if: steps.preflight.outputs.refused != 'true'
+        run: |
+          gh issue edit "$ISSUE_NUMBER" --remove-label "agent:implement" || true
+          gh issue edit "$ISSUE_NUMBER" --remove-label "agent:blocked" || true
+          gh issue edit "$ISSUE_NUMBER" --add-label "agent:in-progress"
+
+      - name: Checkout main
+        if: steps.preflight.outputs.refused != 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.AGENT_PAT || secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        if: steps.preflight.outputs.refused != 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        if: steps.preflight.outputs.refused != 'true'
+        run: npm ci
+
+      - name: Install pi CLI
+        if: steps.preflight.outputs.refused != 'true'
+        run: npm install -g --ignore-scripts @earendil-works/pi-coding-agent
+
+      - name: Compute branch name
+        if: steps.shape.outputs.route == 'implement'
+        id: branch
+        run: |
+          slug=$(echo "$ISSUE_TITLE" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+|-+$//g' | cut -c1-50)
+          branch="agent/issue-${ISSUE_NUMBER}-${slug}"
+          echo "name=$branch" >> "$GITHUB_OUTPUT"
+
+      - name: Create branch
+        if: steps.shape.outputs.route == 'implement'
+        env:
+          BRANCH: ${{ steps.branch.outputs.name }}
+        run: |
+          git config user.name "sandcastle-agent[bot]"
+          git config user.email "sandcastle-agent[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+
+      # The evidence prompt has the agent screenshot the UI; Electron needs a
+      # display even headless, hence xvfb (ADR 0014). The spec routes don't
+      # capture evidence.
+      - name: Install xvfb for UI evidence
+        if: steps.shape.outputs.route == 'implement'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+
+      - name: Run to-tickets runner
+        if: steps.shape.outputs.route == 'to-tickets'
+        env:
+          ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
+          AGENT_PAT: ${{ secrets.AGENT_PAT }}
+          OUTPUT_DIR: ${{ runner.temp }}
+        run: npx tsx .sandcastle/agent-workflows/to-tickets/to-tickets.ts
+
+      - name: Run spec-explore runner
+        if: steps.shape.outputs.route == 'spec-explore'
+        env:
+          ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
+          OUTPUT_DIR: ${{ runner.temp }}
+        run: npx tsx .sandcastle/agent-workflows/spec-explore/spec-explore.ts
+
+      - name: Push notes branch
+        if: steps.shape.outputs.route == 'spec-explore' && success()
+        run: |
+          notes_branch="agent/spec-${ISSUE_NUMBER}-notes"
+          git push --force origin "$notes_branch"
+
+      - name: Post exploration comment
+        if: steps.shape.outputs.route == 'spec-explore' && success()
+        run: |
+          notes_branch="agent/spec-${ISSUE_NUMBER}-notes"
+          comment_file="${RUNNER_TEMP}/exploration-comment.md"
+          cat > "$comment_file" <<EOF
+          <!-- exploration-notes: $notes_branch -->
+          Exploration notes saved on branch \`$notes_branch\` (see \`notes/\` there).
+
+          Implement runners for this Spec's Tickets: \`git fetch origin $notes_branch\` and read the notes for shared context before implementing. The Tickets themselves flow through the converter as blockers close.
+          EOF
+          gh issue comment "$ISSUE_NUMBER" --body-file "$comment_file"
+
+      - name: Run implementation agent
+        if: steps.shape.outputs.route == 'implement'
+        env:
+          ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
+          BRANCH: ${{ steps.branch.outputs.name }}
+          OUTPUT_DIR: ${{ runner.temp }}
+          PARENT_NUMBER: ${{ steps.shape.outputs.parent_number }}
+        run: npx tsx .sandcastle/agent-workflows/implement/implement.ts
+
+      - name: Upload evidence screenshots
+        if: steps.shape.outputs.route == 'implement' && success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: evidence-issue-${{ github.event.issue.number }}
+          path: /tmp/evidence
+          if-no-files-found: ignore
+
+      - name: Push branch
+        if: steps.shape.outputs.route == 'implement' && success()
+        env:
+          BRANCH: ${{ steps.branch.outputs.name }}
+        run: git push --force origin "$BRANCH"
+
+      - name: Announce handoff to the merger
+        # v2: a Ticket with a parent Spec ships without a PR, so between
+        # this push and the merger's close the Ticket sits OPEN with no
+        # label — indistinguishable from an unstarted or dead one. Leave
+        # the trace on the Ticket itself (classic chain has the PR).
+        if: steps.shape.outputs.route == 'implement' && steps.shape.outputs.parent_number != '' && success()
+        env:
+          BRANCH: ${{ steps.branch.outputs.name }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >-
+          gh issue comment "$ISSUE_NUMBER" --body
+          "Branch \`${BRANCH}\` pushed (v2: no PR — the merger takes it).
+          Waiting at the wave barrier: the merger merges this branch into
+          the Spec's integration branch and closes this Ticket when its
+          whole wave is complete."
+
+      - name: Open draft PR
+        if: steps.shape.outputs.route == 'implement' && steps.shape.outputs.parent_number == '' && success()
+        id: open_pr
+        env:
+          BRANCH: ${{ steps.branch.outputs.name }}
+          PR_BODY_FILE: ${{ runner.temp }}/pr-body.md
+        run: |
+          set -euo pipefail
+          title="Fix #${ISSUE_NUMBER}: ${ISSUE_TITLE}"
+          title="${title:0:256}"
+          if [ ! -s "$PR_BODY_FILE" ]; then
+            {
+              echo "Closes #${ISSUE_NUMBER}"
+              echo
+              echo "Implemented by the Sandcastle agent workflow."
+            } > "$PR_BODY_FILE"
+          fi
+          pr_url=$(gh pr create --draft --base main --head "$BRANCH" --title "$title" --body-file "$PR_BODY_FILE" | tail -n1)
+          echo "pr_number=$(basename "$pr_url")" >> "$GITHUB_OUTPUT"
+
+      - name: Request automated review
+        if: steps.shape.outputs.route == 'implement' && steps.shape.outputs.parent_number == '' && success()
+        env:
+          PR_NUMBER: ${{ steps.open_pr.outputs.pr_number }}
+          AGENT_PAT: ${{ secrets.AGENT_PAT }}
+          GITHUB_TOKEN_FALLBACK: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set +e
+          if [ -n "$AGENT_PAT" ]; then
+            GH_TOKEN="$AGENT_PAT" gh pr edit "$PR_NUMBER" --add-label "agent:review"
+            status=$?
+            if [ "$status" -eq 0 ]; then
+              exit 0
+            fi
+          fi
+          GH_TOKEN="$GITHUB_TOKEN_FALLBACK" gh pr edit "$PR_NUMBER" --add-label "agent:review"
+
+      - name: Mark blocked on failure
+        if: failure() && steps.preflight.outputs.refused != 'true'
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          reason="(no reason file written; check workflow logs)"
+          if [ -f "${RUNNER_TEMP}/failure_reason.txt" ]; then
+            reason=$(cat "${RUNNER_TEMP}/failure_reason.txt")
+          fi
+          body_file="${RUNNER_TEMP}/failure-comment.md"
+          printf '`agent:implement` run failed.\n\n**Reason:** %s\n\n**Workflow run:** %s\n\nRe-add `agent:implement` to retry.\n' "$reason" "$RUN_URL" > "$body_file"
+          gh issue edit "$ISSUE_NUMBER" --add-label "agent:blocked" || true
+          gh issue comment "$ISSUE_NUMBER" --body-file "$body_file"
+
+      - name: Always remove in-progress
+        if: always() && steps.preflight.outputs.refused != 'true'
+        run: gh issue edit "$ISSUE_NUMBER" --remove-label "agent:in-progress" || true
