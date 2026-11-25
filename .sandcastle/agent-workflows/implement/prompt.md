@@ -66,17 +66,22 @@ Do not create or edit PRs.
 
 # EVIDENCE
 
-When the change shows in the UI, save a before and an after screenshot as
-PNGs in `/tmp/evidence/`. The branch matches `main` before you edit, so the
-before state is real: build the app (`npm run build`), then capture
+If the repo ships `scripts/evidence-screenshot.mjs` (the Electron-app
+convention this factory grew up in), capture a before and an after
+screenshot with it as PNGs in `/tmp/evidence/`: the branch matches `main`
+before you edit, so the before state is real. Build (`npm run build`),
+then capture
 
     npx electron --no-sandbox scripts/evidence-screenshot.mjs /tmp/evidence/before.png
 
 Implement, build again, and capture the after state to
-`/tmp/evidence/after.png`. The workflow runs under a virtual display (xvfb)
-and uploads `/tmp/evidence/` as an artifact. The PNGs live only in that
-artifact: a human cannot open a local path from your text, so reference
-the evidence by linking the run page,
+`/tmp/evidence/after.png`.
+
+If the repo has no such script (a static web build with no app window),
+do not invent one and do not commit screenshot tooling: evidence is the
+commands you ran and their output. The workflow uploads `/tmp/evidence/`
+as an artifact when present. A human cannot open a local path from your
+text, so reference the evidence by linking the run page,
 `$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID` —
 never by writing a bare `/tmp/...` path.
 

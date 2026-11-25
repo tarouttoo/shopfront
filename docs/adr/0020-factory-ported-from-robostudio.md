@@ -51,6 +51,23 @@ this repo continue from `0020` upward, without regard to the gaps.
   surface the factory's PRs update).
 - Required secrets: `AGENT_PAT` and `ZAI_API_KEY`, same meaning as in
   robostudio (the PAT cascade and the model provider).
+- Repository settings the factory needs, matching robostudio: Actions
+  may create and approve pull requests
+  (`can_approve_pull_request_reviews: true`) and auto-merge is allowed
+  (`allow_auto_merge: true`) — without the first, the implement run
+  cannot open its draft PR; without the second, ADR `0011`'s gate has
+  nothing to arm.
+
+## Port adaptations
+
+- `implement/prompt.md`'s EVIDENCE section assumed robostudio's product:
+  `scripts/evidence-screenshot.mjs` is an Electron-window capture. On
+  the first shopfront run the agent, obeying the prompt literally,
+  fabricated an Electron screenshot script into a static-site repo. The
+  section is now conditional — use the script when the repo ships it,
+  otherwise evidence is command output, never invented tooling.
+  Screenshot evidence for the web build is a future ticket, not a
+  prompt-level fiction.
 
 ## Consequences
 
