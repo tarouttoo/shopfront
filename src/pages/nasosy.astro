@@ -1,0 +1,30 @@
+---
+import Base from "../layouts/Base.astro";
+import ProductTable from "../components/ProductTable";
+import ScrollTop from "../components/ScrollTop.astro";
+
+/**
+ * Насосы (Spec #4, T4): the approved nasosy.html page — a build-time
+ * shell (page hero + furniture) with the product table island. The
+ * 5818-position dataset loads client-side from the per-category JSON
+ * asset; search, filters, pagination and the cart actions run fully
+ * client-side inside the island.
+ */
+---
+<Base
+  title="Насосы — ООО ИТЦ «Альтер Энерго»"
+  description="Насосное оборудование: вертикальные и горизонтальные насосы, установки повышения давления и пожаротушения. Подбор по характеристикам, цены по запросу."
+>
+  <section class="bg-primary pt-[44px] pb-9 text-white">
+    <div class="mx-auto max-w-[1240px] px-5">
+      <h1 class="mb-2 text-[2rem] leading-tight font-extrabold">Насосы</h1>
+      <p class="max-w-[560px] text-[1.02rem] text-white/90">
+        Насосное оборудование. Подбор под задачу.
+      </p>
+    </div>
+  </section>
+
+  <ProductTable client:only="react" />
+
+  <ScrollTop />
+</Base>
