@@ -82,7 +82,7 @@ describe("base layout (built static output)", () => {
   });
 
   it("renders every existing page inside the same shell", () => {
-    for (const page of ["catalog", "order"]) {
+    for (const page of ["catalog", "order", "services", "privacy"]) {
       const built = readFileSync(
         new URL(`../dist/${page}/index.html`, import.meta.url),
         "utf8",

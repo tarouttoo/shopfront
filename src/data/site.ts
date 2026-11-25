@@ -37,6 +37,8 @@ export const SITE = {
     { display: "+7 (3952) 72-57-15", tel: "+73952725715" },
   ],
   email: "ae38@list.ru",
+  /** The Client's production domain, as named in the privacy policy. */
+  domain: "ae38.ru",
   workingHours: "Пн–Пт: 10:00–18:00",
   /** Yandex map widget: pin at 104.256634, 52.277113, as in the source. */
   mapEmbedUrl:

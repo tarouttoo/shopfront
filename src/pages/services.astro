@@ -1,0 +1,208 @@
+---
+import Base from "../layouts/Base.astro";
+import ScrollTop from "../components/ScrollTop.astro";
+import { SITE } from "../data/site";
+import { withBase } from "../lib/urls";
+
+/**
+ * The Services page (Spec #4, T5), ported from the approved source
+ * `reference/project-B/resheniya.html` in source order: hero intro,
+ * «Услуги» cards, «Наши компетенции», FAQ, «Оставить заявку» CTA.
+ *
+ * Adaptations pinned by the Spec and its tests (changed-string list
+ * commented on #4 for re-approval):
+ * - the source h1/title «Решения под ключ» → «Услуги»: GLOSSARY keeps
+ *   «Решения под ключ» as the approved landing label only;
+ * - the source inline lead form (Web3Forms) is replaced by a CTA to
+ *   /order — no form, no key in the repo (Spec decision 2); the
+ *   sub-line reuses the approved landing contacts copy;
+ * - «заказать» → заявка wording in the FAQ (GLOSSARY).
+ */
+
+const intro =
+  "Полный цикл работ: от проектирования и производства НКУ до монтажа, пусконаладки и сервисного обслуживания.";
+
+const services = [
+  {
+    title: "Генеральный подряд",
+    text: "Полный спектр работ от проектирования до ввода объекта в эксплуатацию.",
+  },
+  {
+    title: "Монтаж и ПНР",
+    text: "Монтаж оборудования, котельных, насосных станций. Пусконаладка и сдача в эксплуатацию.",
+  },
+  {
+    title: "Автоматизация",
+    text: "Внедрение АСУ ТП, диспетчеризация, разработка шкафов управления на базе ОВЕН.",
+  },
+  {
+    title: "Сервис и ремонт",
+    text: "Гарантийное и постгарантийное обслуживание. Ремонтно-наладочные испытания.",
+  },
+];
+
+const competencies = [
+  {
+    title: "Производство НКУ",
+    text: "Собственное производство шкафов управления и автоматики",
+  },
+  {
+    title: "Сварка НАКС",
+    text: "Аттестованные сварщики для ответственных металлоконструкций",
+  },
+  {
+    title: "Сервисный центр",
+    text: "Авторизованный сервис по оборудованию партнёров",
+  },
+  {
+    title: "СРО",
+    text: "Допуски на проектирование и строительно-монтажные работы",
+  },
+];
+
+const faq = [
+  {
+    question: "Какие объекты вы обслуживаете?",
+    answer:
+      "Работаем с промышленными предприятиями, объектами ЖКХ, коммерческими зданиями. Специализируемся на котельных, ИТП, системах теплоснабжения и автоматизации.",
+  },
+  {
+    question: "Делаете ли вы проектирование?",
+    answer:
+      "Да. У нас есть допуск СРО на проектирование. Разрабатываем проектную документацию и рабочую документацию.",
+  },
+  {
+    question: "Можно ли включить в заявку только шкаф управления?",
+    answer:
+      "Да. Мы производим НКУ под конкретный проект: шкаф можно включить в заявку отдельно или в составе комплексных работ.",
+  },
+  {
+    question: "Работаете ли вы за пределами Иркутска?",
+    answer:
+      "Основной регион — Иркутск и Иркутская область. По согласованию выезжаем в соседние регионы.",
+  },
+];
+---
+
+<Base title={`Услуги — ${SITE.name}`} description={intro}>
+  <div class="bg-mist">
+    <!-- Page hero (approved source) -->
+    <section class="bg-primary pt-[50px] pb-10 text-white">
+      <div class="mx-auto max-w-[1100px] px-5">
+        <h1 class="mb-2.5 text-[2.1rem] leading-tight font-extrabold">Услуги</h1>
+        <p class="max-w-[580px] opacity-90">{intro}</p>
+      </div>
+    </section>
+
+    <!-- Услуги cards + Наши компетенции (approved source, one section) -->
+    <section class="py-[60px]">
+      <div class="mx-auto max-w-[1100px] px-5">
+        <div class="mb-10 text-center">
+          <h2 class="mb-2.5 text-[1.8rem] font-extrabold">Услуги</h2>
+          <p class="mx-auto max-w-[560px] text-ink-light">
+            Комплексный подход к каждому объекту
+          </p>
+        </div>
+        <div class="grid gap-5 min-[701px]:grid-cols-2">
+          {
+            services.map((service) => (
+              <div class="rounded-card border border-haze bg-white px-6 py-7 transition-all duration-[250ms] hover:-translate-y-[3px] hover:shadow-card">
+                <h3 class="mb-2.5 text-[1.15rem] font-bold text-primary-dark">
+                  {service.title}
+                </h3>
+                <p class="m-0 text-[0.92rem] text-ink-light">{service.text}</p>
+              </div>
+            ))
+          }
+        </div>
+
+        <div class="mt-5 rounded-2xl bg-white p-9 shadow-card max-md:p-6">
+          <h3 class="mb-5 text-[1.3rem] text-primary">Наши компетенции</h3>
+          <div class="grid gap-3.5 min-[701px]:grid-cols-2">
+            {
+              competencies.map((competency) => (
+                <div class="flex items-start gap-3 rounded-btn bg-mist p-3.5">
+                  <div>
+                    <strong class="mb-0.5 block text-[0.95rem]">{competency.title}</strong>
+                    <span class="text-[0.85rem] text-ink-light">{competency.text}</span>
+                  </div>
+                </div>
+              ))
+            }
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Частые вопросы (approved source: white section, accordion) -->
+    <section class="bg-white py-[60px]">
+      <div class="mx-auto max-w-[1100px] px-5">
+        <h2 class="mb-10 text-center text-[1.8rem] font-extrabold">Частые вопросы</h2>
+        <div class="mt-5">
+          {
+            faq.map((item) => (
+              <div class="mb-3 overflow-hidden rounded-xl border border-haze bg-white">
+                <div
+                  class="faq-q flex cursor-pointer items-center justify-between gap-4 px-[22px] py-[18px] font-semibold transition-colors hover:bg-mist [.open_&]:text-primary"
+                  role="button"
+                  tabindex="0"
+                  aria-expanded="false"
+                >
+                  {item.question}
+                  <span aria-hidden="true" class="text-xl leading-none">+</span>
+                </div>
+                <div class="hidden px-[22px] pb-[18px] text-[0.95rem] leading-[1.6] text-ink-light [.open_&]:block">
+                  {item.answer}
+                </div>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- Оставить заявку (approved source carried an inline Web3Forms lead
+         form here — stripped per Spec decision 2; the CTA leads to the
+         Order Request page instead, with the approved landing contacts
+         copy as the sub-line) -->
+    <section class="py-[60px]">
+      <div class="mx-auto max-w-[1100px] px-5">
+        <div class="mx-auto max-w-[560px] rounded-2xl bg-white p-9 text-center shadow-card max-md:p-6">
+          <h3 class="mb-[22px] text-[1.3rem] font-bold">Оставить заявку</h3>
+          <p class="mb-6 text-[0.95rem] text-ink-light">
+            Позвоните, напишите или оставьте заявку — ответим в рабочее время.
+          </p>
+          <a
+            href={withBase("order/")}
+            class="inline-flex w-full items-center justify-center rounded-btn bg-primary px-6 py-[13px] text-[15px] font-semibold text-white transition-colors hover:bg-primary-dark"
+          >
+            Оставить заявку
+          </a>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <ScrollTop />
+</Base>
+
+<script>
+  // FAQ accordion (approved source behavior): a click or Enter/Space on
+  // the question toggles the item's `open` class; the answer and the
+  // question color react through the [.open_&] variants.
+  document.querySelectorAll<HTMLElement>(".faq-q").forEach((question) => {
+    const toggle = () => {
+      const item = question.parentElement;
+      if (!item) return;
+      const open = item.classList.toggle("open");
+      question.setAttribute("aria-expanded", String(open));
+    };
+    question.addEventListener("click", toggle);
+    question.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        toggle();
+      }
+    });
+  });
+</script>

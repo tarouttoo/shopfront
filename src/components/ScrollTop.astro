@@ -1,0 +1,47 @@
+---
+/**
+ * Floating «Наверх» button (approved source chrome): a fixed round
+ * primary button that stays hidden until the page is scrolled past 300px
+ * and smooth-scrolls back to the top on click. Shared by the pages whose
+ * approved sources carry it (`resheniya.html`, `privacy.html` — Spec #4,
+ * T5); the landing carries its own copy in `index.html` and may reuse
+ * this component instead of duplicating the markup.
+ */
+---
+
+<button
+  id="scroll-top"
+  type="button"
+  title="Наверх"
+  aria-label="Наверх"
+  class="pointer-events-none fixed right-5 bottom-6 z-[1100] flex h-[46px] w-[46px] items-center justify-center rounded-full bg-primary text-white opacity-0 shadow-[0_6px_18px_rgba(13,71,161,0.25)] transition-all duration-200 invisible hover:-translate-y-0.5 hover:bg-primary-dark data-[show]:pointer-events-auto data-[show]:visible data-[show]:opacity-100"
+>
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2.5"
+    class="h-5 w-5"
+    aria-hidden="true"
+  >
+    <polyline points="6 14 12 8 18 14"></polyline>
+  </svg>
+</button>
+
+<script>
+  // Approved source behavior: the button appears after 300px of scroll
+  // and smooth-scrolls back to the top on click. The data-show attribute
+  // drives the visibility utilities on the button.
+  const button = document.getElementById("scroll-top");
+  if (button) {
+    const sync = () => {
+      if (window.scrollY > 300) button.setAttribute("data-show", "");
+      else button.removeAttribute("data-show");
+    };
+    window.addEventListener("scroll", sync, { passive: true });
+    sync();
+    button.addEventListener("click", () => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  }
+</script>
