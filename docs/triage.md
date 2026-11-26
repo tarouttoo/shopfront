@@ -122,6 +122,6 @@ issues are closed with a one-line comment pointing at the survivor.
 - [ ] Draft PR arrives → review it
 - [ ] Feedback → comment + `agent:implement` on the PR
 - [ ] Conflicts → `agent:update-branch` on the PR
-- [ ] Ready → you merge, or the pipeline auto-merges on a clean review with a two-way door (ADR 0011)
+- [ ] Ready → you merge, or the pipeline auto-merges on a clean review with a two-way door (ADR 0011; a verdict holding an unfixed factory-breaking finding waits for you — ADR 0023)
 - [ ] Backlog → `agent:explore`, act on `ready-for-human` / `agent:blocked` survivors
 - [ ] Failure comment → re-add the trigger label it names

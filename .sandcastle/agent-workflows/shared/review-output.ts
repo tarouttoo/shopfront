@@ -21,6 +21,14 @@ export interface ReviewOutput {
   readonly summary: string;
   readonly inlineComments: InlineComment[];
   readonly replies: ThreadReply[];
+  /**
+   * ADR 0023: set when the review flagged a finding it cannot fix in
+   * scope, on `.github/**` or `.sandcastle/agent-workflows/**`, whose
+   * effect is a deterministic break of agent runs — the merge gate then
+   * holds the PR for the operator instead of running the fix loop.
+   * Product-side findings keep today's behavior (flag-and-merge).
+   */
+  readonly holdsMerge: boolean;
 }
 
 export interface ImplementPrOutput {
@@ -60,6 +68,16 @@ const parseReply = (value: unknown): ThreadReply => {
   };
 };
 
+// The hold flag is the merge gate's input (ADR 0023): at this agent-JSON
+// boundary a missing or mistyped key is a rejection, never a default —
+// a drifted key must not silently disarm the hold.
+const parseHoldsMerge = (value: unknown): boolean => {
+  if (typeof value !== "boolean") {
+    throw new Error("holds_merge must be a boolean");
+  }
+  return value;
+};
+
 export const reviewOutputSchema = standardSchema<ReviewOutput>((value) => {
   const record = asRecord(value, "review output");
   return {
@@ -68,6 +86,7 @@ export const reviewOutputSchema = standardSchema<ReviewOutput>((value) => {
       parseInlineComment,
     ),
     replies: asArray(record.replies ?? [], "replies").map(parseReply),
+    holdsMerge: parseHoldsMerge(record.holds_merge),
   };
 });
 
