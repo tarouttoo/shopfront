@@ -1,9 +1,14 @@
-import { execSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { beforeAll, describe, expect, it } from "vitest";
 
-/** Isolated build output so parallel built-output suites don't race on dist/. */
-const OUT_DIR = "dist-indexability";
+/** Every built page under dist/, depth-first, as absolute paths. */
+const htmlFilesUnder = (dir: URL): string[] =>
+  readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const child = new URL(`${entry.name}${entry.isDirectory() ? "/" : ""}`, dir);
+    if (entry.isDirectory()) return htmlFilesUnder(child);
+    return entry.name.endsWith(".html") ? [fileURLToPath(child)] : [];
+  });
 
 /**
  * The site is public and indexable (ADR 0022 lifting ADR 0020/0021's
@@ -20,19 +25,11 @@ describe("indexability of the built site", () => {
   let sitemapIndex: string;
 
   beforeAll(() => {
-    execSync("npx astro build", {
-      stdio: "pipe",
-      env: { ...process.env, SITE_OUT_DIR: OUT_DIR },
-    });
-    const dist = new URL(`../${OUT_DIR}/`, import.meta.url);
-    htmlFiles = execSync(`find ${OUT_DIR} -name '*.html'`, { encoding: "utf8" })
-      .trim()
-      .split("\n")
-      .filter(Boolean)
-      .map((p) => ({
-        path: p,
-        html: readFileSync(p, "utf8"),
-      }));
+    // dist/ is the shared build from scripts/test-build.ts (the vitest
+    // globalSetup) — suites never exec their own.
+    const dist = new URL("../dist/", import.meta.url);
+    htmlFiles = htmlFilesUnder(dist)
+      .map((p) => ({ path: p, html: readFileSync(p, "utf8") }));
     robotsTxt = readFileSync(new URL("robots.txt", dist), "utf8");
     sitemapIndex = readFileSync(new URL("sitemap-index.xml", dist), "utf8");
   });

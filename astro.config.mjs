@@ -11,12 +11,11 @@ export default defineConfig({
   site: "https://tarouttoo.github.io",
   base: "/shopfront",
   output: "static",
-  // Built-output test suites exec `astro build`; vitest runs the test
-  // files sequentially (fileParallelism: false in vitest.config.ts), so
-  // sharing one dist/ is safe for them. Suites that need their own tree
-  // (the indexability suite scans every built HTML file) isolate
-  // themselves via SITE_OUT_DIR; the default stays the deploy dir.
-  outDir: process.env.SITE_OUT_DIR ?? "dist",
+  // The deploy output dir. The built-output test suites never build
+  // here themselves: they read the one shared build the vitest
+  // globalSetup produces with this configuration
+  // (scripts/test-build.ts).
+  outDir: "dist",
   // The site is public and indexable (ADR 0022): the sitemap gives the
   // search engines the full page list to crawl. Built into
   // dist/sitemap-index.xml under `site` + `base`; robots.txt points at it.

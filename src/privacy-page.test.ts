@@ -1,4 +1,3 @@
-import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { beforeAll, describe, expect, it } from "vitest";
 import { SITE } from "./data/site";
@@ -15,15 +14,10 @@ describe("privacy page (built static output)", () => {
   let html: string;
 
   beforeAll(() => {
-    // Vitest exports BASE_URL=/ into the environment; an inherited
-    // value would override the configured /shopfront base in the child
-    // astro build. Build with the environment a real `npm run build`
-    // has — no BASE_URL.
-    const env = { ...process.env };
-    delete env.BASE_URL;
-    execSync("npx astro build", { stdio: "pipe", env });
-    // Developer comments (Astro keeps them in the output) are not UI:
-    // strip them so the asserts see only what a visitor sees.
+    // dist/ is the shared build from scripts/test-build.ts (the vitest
+    // globalSetup) — suites never exec their own. Developer comments
+    // (Astro keeps them in the output) are not UI: strip them so the
+    // asserts see only what a visitor sees.
     html = readFileSync(
       new URL("../dist/privacy/index.html", import.meta.url),
       "utf8",
