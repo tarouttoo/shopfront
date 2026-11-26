@@ -10,7 +10,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     concurrency:
-      group: agent-implement-issue-${{ github.event.issue.number }}
+      # ADR 0025: the provider caps concurrent agent sessions (~3), so all
+      # heavy LLM workflows queue in three repo-wide shards keyed by the
+      # unit number mod 3 (a wave of implement runs can no longer fan out
+      # past the limit). Same-issue runs still serialize — same number,
+      # same shard.
+      group: agent-llm-${{ github.event.issue.number % 3 }}
       cancel-in-progress: false
     permissions:
       contents: write

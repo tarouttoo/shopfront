@@ -24,7 +24,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     concurrency:
-      group: agent-mutate-pr-${{ github.event.pull_request.number }}
+      # ADR 0025: repo-wide three-shard cap on concurrent agent runs. The
+      # PR number is the shard key, so same-PR mutation stays serialized
+      # (the old agent-mutate-pr-<N> guarantee) while different PRs share
+      # a shard and queue.
+      group: agent-llm-${{ github.event.pull_request.number % 3 }}
       cancel-in-progress: false
     permissions:
       contents: write
