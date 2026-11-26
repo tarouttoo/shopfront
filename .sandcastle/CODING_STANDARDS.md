@@ -77,9 +77,9 @@ Web3Forms» describing a submitter Spec #4 strips everywhere; reported on
 ## Rejection strings are Russian glossary words beside their reducer
 
 A user-facing rejection message is written where the rejection is produced
-(the editor/canvas reducer), uses only GLOSSARY.md terms, and tells the
-operator how to proceed. Extract a named constant only when two sites must
-stay identical.
+(the cart reducer and checkout validators in `src/lib`), uses only
+GLOSSARY.md terms, and tells the visitor how to proceed. Extract a named
+constant only when two sites must stay identical.
 
 ## Interaction logic is tested in the pure modules, not the rendered App
 
