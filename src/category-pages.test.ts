@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { beforeAll, describe, expect, it } from "vitest";
-import { PRODUCTS } from "./lib/catalog";
+import { PRODUCTS, populatedCategories } from "./lib/catalog";
 
 /**
  * The category pages (Spec #4, T4) asserted against the built static
@@ -85,6 +85,17 @@ describe("category pages (built static output)", () => {
     expect(html).toContain("Позиции этого раздела готовятся к публикации");
     expect(html).toContain('href="/shopfront/order/"');
     expect(html).toContain("Оставить заявку");
+  });
+
+  it("every populated Category ships its data asset for the loader", () => {
+    // loadOrderableProducts() fetches exactly the populated Categories
+    // (catalog.ts derives them from catalog.json), so each one must
+    // have its per-category asset in the shared build.
+    for (const id of populatedCategories()) {
+      const asset = readFileSync(new URL(`../dist/data/${id}.json`, import.meta.url), "utf8");
+      const data = JSON.parse(asset) as unknown[];
+      expect(data.length).toBeGreaterThan(0);
+    }
   });
 
   it("empty categories ship no product table and no toolbar", () => {

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { cartCount, resolveCartLines } from "../lib/cart";
 import { getCartStore } from "../lib/cartStore";
-import { fetchCategoryProducts } from "../lib/catalogClient";
+import { loadOrderableProducts } from "../lib/catalogClient";
 import type { Product } from "../lib/catalog";
 import CartModal from "./CartModal";
 
@@ -18,10 +18,11 @@ import CartModal from "./CartModal";
  * opens the drawer (the approved addToCart → openCart behavior); a
  * remote (cross-tab) change never does.
  *
- * Drawer rows need Product names: the category JSON loads lazily on
- * first open (never inline in the bundle). Until it arrives a line
- * shows its SKU; the Cart holds only Catalog SKUs, and the nasosy
- * asset is the one orderable category today (Spec #4).
+ * Drawer rows need Product names: the Catalog loads lazily through
+ * the shared `loadOrderableProducts()` loader (never inline in the
+ * bundle). Until it arrives a line shows its SKU; the Cart holds only
+ * Catalog SKUs, and the loader follows the populated Categories of
+ * catalog.json — Насосы is the one orderable Category today (Spec #4).
  */
 export default function CartButtons() {
   const store = getCartStore();
@@ -44,7 +45,7 @@ export default function CartButtons() {
   useEffect(() => {
     if (!open || requested.current) return;
     requested.current = true;
-    fetchCategoryProducts("nasosy").then(
+    loadOrderableProducts().then(
       (products) => setCatalog(products),
       // Keep the drawer usable without names; the next open retries.
       () => {

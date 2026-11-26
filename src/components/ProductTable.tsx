@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Product } from "../lib/catalog";
-import { fetchCategoryProducts } from "../lib/catalogClient";
+import { loadOrderableProducts } from "../lib/catalogClient";
 import { getCartStore } from "../lib/cartStore";
 import {
   MODELS_PAGE_SIZE,
@@ -75,9 +75,10 @@ function Pager({
  * `reference/project-B/nasosy.html` catalog as a React island —
  * toolbar (type select, search «Поиск по серии, модели, артикулу…»,
  * sort), series cards with pagination, and a per-series models table
- * with «В корзину» actions. Position data loads client-side from the
- * build-time per-category asset (5818 positions never enter the page
- * bundle); search, filters and pagination run fully client-side.
+ * with «В корзину» actions. Position data loads client-side through
+ * `loadOrderableProducts()` — every populated Category's positions
+ * (5818 today, never in the page bundle); search, filters and
+ * pagination run fully client-side.
  *
  * The «В корзину» buttons publish to the singleton Cart store — a typed
  * `dispatch({ type: "add", sku })`, the store's one write path (ADR
@@ -104,7 +105,7 @@ export default function ProductTable() {
 
   useEffect(() => {
     let cancelled = false;
-    fetchCategoryProducts("nasosy").then(
+    loadOrderableProducts().then(
       (products) => {
         if (!cancelled) setLoad({ phase: "ready", products });
       },

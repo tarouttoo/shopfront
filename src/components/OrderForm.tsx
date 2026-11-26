@@ -7,7 +7,7 @@ import {
 } from "../lib/checkout";
 import { resolveCartLines } from "../lib/cart";
 import type { Product } from "../lib/catalog";
-import { fetchCategoryProducts } from "../lib/catalogClient";
+import { loadOrderableProducts } from "../lib/catalogClient";
 import { getCartStore } from "../lib/cartStore";
 import { withBase } from "../lib/urls";
 
@@ -25,11 +25,12 @@ import { withBase } from "../lib/urls";
  * line) as Tailwind tokens. UI wording stays glossary-only (Заявка —
  * this file must stay greppably free of the banned retail stem).
  *
- * Line names resolve against the Catalog loaded the Cart drawer's way:
- * fetched lazily from the build-time per-category asset, never passed
- * as island props — props would serialize all 5818 positions into the
+ * Line names resolve against the Catalog loaded through the shared
+ * `loadOrderableProducts()` loader: fetched lazily from the build-time
+ * per-category assets of the populated Categories, never passed as
+ * island props — props would serialize all 5818 positions into the
  * prerendered HTML. Until it arrives a row shows its SKU, the only
- * fact known without the data; a failed fetch keeps that degraded
+ * fact known without the data; a failed load keeps that degraded
  * state, and a page refresh retries losslessly (the Cart persists in
  * storage).
  *
@@ -54,7 +55,7 @@ export default function OrderForm() {
   useEffect(() => {
     if (!hasLines) return;
     let cancelled = false;
-    fetchCategoryProducts("nasosy").then(
+    loadOrderableProducts().then(
       (products) => {
         if (!cancelled) setCatalog(products);
       },
