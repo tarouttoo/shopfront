@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Product } from "../lib/catalog";
+import type { CategoryId } from "../lib/categories";
 import { loadOrderableProducts } from "../lib/catalogClient";
 import { getCartStore } from "../lib/cartStore";
 import {
@@ -76,9 +77,11 @@ function Pager({
  * toolbar (type select, search «Поиск по серии, модели, артикулу…»,
  * sort), series cards with pagination, and a per-series models table
  * with «В корзину» actions. Position data loads client-side through
- * `loadOrderableProducts()` — every populated Category's positions
- * (5818 today, never in the page bundle); search, filters and
- * pagination run fully client-side.
+ * `loadOrderableProducts()` (the populated Categories' positions, 5818
+ * today, never in the page bundle) and is filtered to the `category`
+ * param — islands receive params — so the table renders exactly its
+ * page's Category even as more Categories become populated; search,
+ * filters and pagination run fully client-side.
  *
  * The «В корзину» buttons publish to the singleton Cart store — a typed
  * `dispatch({ type: "add", sku })`, the store's one write path (ADR
@@ -86,7 +89,12 @@ function Pager({
  * Cart changes never re-render the 5818-position table; the header
  * Cart island opens the drawer on the change.
  */
-export default function ProductTable() {
+interface Props {
+  /** The page's Category (islands receive params): the table renders its positions only. */
+  category: CategoryId;
+}
+
+export default function ProductTable({ category }: Props) {
   const store = getCartStore();
   const [load, setLoad] = useState<LoadState>({ phase: "loading" });
   const [type, setType] = useState<PumpTypeFilter>("all");
@@ -106,8 +114,10 @@ export default function ProductTable() {
   useEffect(() => {
     let cancelled = false;
     loadOrderableProducts().then(
-      (products) => {
-        if (!cancelled) setLoad({ phase: "ready", products });
+      (orderable) => {
+        if (!cancelled) {
+          setLoad({ phase: "ready", products: orderable.filter((p) => p.category === category) });
+        }
       },
       () => {
         if (!cancelled) setLoad({ phase: "error" });
