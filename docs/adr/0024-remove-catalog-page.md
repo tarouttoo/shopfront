@@ -4,8 +4,8 @@ The skeleton shipped it before the robostudio port; the approved source
 has no catalog tab — the four category pages carry the product behavior.
 ADR `0021`'s promise «a prerendered catalog serves real HTML per
 Product» kept the page alive, but with real data the aggregate page
-prerendered to an 11.1 MB HTML file (11,132,948 bytes over all 5818
-Product cards) that crawlers truncate — failing the SEO purpose the
+prerendered to an 11.1 MB HTML file (all 5818 Product cards in one
+document) that crawlers truncate — failing the SEO purpose the
 promise served. This ADR amends that promise: the catalog surface is
 the four category pages served from `/data/<category>.json`.
 
