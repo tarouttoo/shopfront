@@ -5,13 +5,45 @@ on:
     types: [labeled]
 
 jobs:
+  # ADR 0025's shard key, computed where arithmetic is legal: GitHub
+  # expressions have no `%` operator (a literal `% 3` in the concurrency
+  # group made all four workflows unparseable), so a shell step reduces
+  # the unit number mod 3 and the heavy job's concurrency group reads it
+  # through `needs`. `||` covers both event shapes in one expression;
+  # a numberless event aborts the shard job instead of silently
+  # queuing every run into shard 0.
+  shard:
+    if: github.event.label.name == 'agent:implement'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      n: ${{ steps.mod.outputs.n }}
+    steps:
+      - id: mod
+        run: |
+          N="${{ github.event.issue.number || github.event.pull_request.number }}"
+          # A labeled event always carries the unit number (ADR 0025); an
+          # empty one is event-shape drift — reject, never guess shard 0.
+          : "${N:?event carried no issue/PR number — cannot compute the shard}"
+          echo "n=$(( N % 3 ))" >> "$GITHUB_OUTPUT"
+
   implement:
+    needs: shard
     if: github.event.label.name == 'agent:implement'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     concurrency:
-      group: agent-implement-issue-${{ github.event.issue.number }}
+      # ADR 0025: the provider caps concurrent agent sessions (~3), so all
+      # heavy LLM workflows queue in one of three repo-wide shards — same
+      # unit number, same shard (same-issue runs still serialize);
+      # different units sharing a shard queue instead of fanning out past
+      # the limit.
+      group: agent-llm-${{ needs.shard.outputs.n }}
       cancel-in-progress: false
+      # queue: max (not the default single): by default GitHub keeps one
+      # run pending per group and a newer queued run cancels it — a lost
+      # run even with cancel-in-progress: false.
+      queue: max
     permissions:
       contents: write
       issues: write
