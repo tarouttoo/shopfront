@@ -6,10 +6,11 @@ import * as path from "node:path";
 /**
  * Vitest globalSetup: build the static site once into dist/ before any
  * test file runs, and have every built-output suite (landing, base
- * layout, category pages, services, privacy, order FAQ, indexability)
- * read that same tree. Before this setup each suite execed its own
- * build into the shared dist/ — seven serial builds per `npm test`,
- * racing the tree mid-prerender (measured flake ~1 in 4 full runs).
+ * layout, category pages, services, privacy, order FAQ, indexability,
+ * page-weight) read that same tree. Before this setup each suite execed
+ * its own build into the shared dist/ — eight serial builds per
+ * `npm test`, racing the tree mid-prerender (measured flake ~1 in 4
+ * full runs).
  *
  * The freshness check is cross-process: a stamp file inside dist/
  * carries the completion time, and a rebuild happens only when some
