@@ -22,6 +22,7 @@ type Workflow = {
     {
       needs?: string | string[];
       steps?: { id?: string; run?: string }[];
+      env?: Record<string, string>;
       concurrency?: {
         group?: string;
         "cancel-in-progress"?: boolean;
@@ -70,5 +71,19 @@ describe("agent workflow concurrency shards (ADR 0025)", () => {
     for (const { file, job } of SHARDED_WORKFLOWS) {
       expect(workflowOf(file).jobs[job]?.concurrency?.group).toMatch(/^agent-llm-/);
     }
+  });
+
+  it("the shard modulus and the planner's AGENT_CONCURRENCY are one number", () => {
+    // ADR 0025: re-tuning the cap changes the modulus in the four shard
+    // steps and AGENT_CONCURRENCY together — this pin keeps the planner
+    // from admitting a wider wave than the shards can run.
+    for (const { file } of SHARDED_WORKFLOWS) {
+      const run =
+        workflowOf(file).jobs.shard?.steps?.find((s) => s.id === "mod")?.run ?? "";
+      expect(Number(run.match(/%\s*(\d+)/)?.[1]), `${file} modulus`).toBe(3);
+    }
+    expect(
+      workflowOf("agent-implement.yml").jobs.implement?.env?.AGENT_CONCURRENCY,
+    ).toBe("3");
   });
 });

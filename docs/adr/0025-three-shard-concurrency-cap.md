@@ -76,4 +76,5 @@ wait on a PR it has nothing to do with — accepted, because the
 alternative was runs failing outright at start. To re-tune the cap,
 change the modulus in the four shard steps and the `AGENT_CONCURRENCY` value
 together; the contract test (`.sandcastle/agent-workflows/shared/concurrency.test.ts`)
-pins the expressions so the two cannot drift silently.
+pins the expressions and the modulus–`AGENT_CONCURRENCY` equality so the two
+cannot drift silently.
