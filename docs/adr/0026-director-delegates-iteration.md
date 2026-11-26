@@ -24,8 +24,9 @@ who ships improvements without per-change pre-approval; the director reviews
   operator-authored from the start — their review is the pipeline's, plus
   the director's post-hoc pass.
 - **Deliberately undecided product questions become operator-decidable** —
-  Order Request intake, catalog data source, CMS (ADR `0021`'s deliberate
-  non-decisions) — under the same post-hoc review and still via wayfinder:
+  Order Request intake and the CMS (ADR `0021`'s deliberate non-decisions),
+  joined by the catalog data source that same ADR pins to JSON in the repo
+  — under the same post-hoc review and still via wayfinder:
   a decision map before building.
 
 ## Considered options
