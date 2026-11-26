@@ -26,12 +26,46 @@ export const fail = (message: string): never => {
 // (PR #12 review died twice with `spawnSync /bin/sh ENOBUFS` on a 4 MB diff)
 const MAX_CAPTURE = 64 * 1024 * 1024;
 
-export const sh = (cmd: string): string =>
-  execSync(cmd, {
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "pipe"],
-    maxBuffer: MAX_CAPTURE,
-  });
+const humanizeBytes = (bytes: number): string => {
+  const gib = bytes / 1024 ** 3;
+  const mib = bytes / 1024 ** 2;
+  const kib = bytes / 1024;
+  if (gib >= 1) return `${Number.isInteger(gib) ? gib : gib.toFixed(1)} GiB`;
+  if (mib >= 1) return `${Number.isInteger(mib) ? mib : mib.toFixed(1)} MiB`;
+  if (kib >= 1) return `${Number.isInteger(kib) ? kib : kib.toFixed(1)} KiB`;
+  return `${bytes} bytes`;
+};
+
+/**
+ * Forensic wrapper for capture failures. A maxBuffer overflow's own error
+ * is the bare `spawnSync /bin/sh ENOBUFS` — no command, no counts — so this
+ * wrapper is the only surface naming the command, the capture limit, and
+ * how much the killed child had captured (always past the limit; that
+ * overflow is why it was killed).
+ */
+const captureError = (cmd: string, error: unknown): Error => {
+  if (error instanceof Error && (error as NodeJS.ErrnoException).code === "ENOBUFS") {
+    const captured = (error as { stdout?: string }).stdout;
+    const bytes =
+      typeof captured === "string" ? Buffer.byteLength(captured) : MAX_CAPTURE;
+    return new Error(
+      `"${cmd}" overflowed ${humanizeBytes(MAX_CAPTURE)} maxBuffer after ${bytes} bytes`,
+    );
+  }
+  return error instanceof Error ? error : new Error(String(error));
+};
+
+export const sh = (cmd: string): string => {
+  try {
+    return execSync(cmd, {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+      maxBuffer: MAX_CAPTURE,
+    });
+  } catch (error) {
+    throw captureError(cmd, error);
+  }
+};
 
 export const safeSh = (cmd: string): string => {
   try {
@@ -41,12 +75,20 @@ export const safeSh = (cmd: string): string => {
   }
 };
 
-export const gh = (args: string[]): string =>
-  execFileSync("gh", args, {
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "pipe"],
-    maxBuffer: MAX_CAPTURE,
-  });
+export const gh = (args: string[]): string => {
+  // Forensic command line: collapse the GraphQL query's newlines so the
+  // wrapped error stays one greppable line in a «Reason:» comment.
+  const cmd = ["gh", ...args].join(" ").replace(/\s+/g, " ");
+  try {
+    return execFileSync("gh", args, {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+      maxBuffer: MAX_CAPTURE,
+    });
+  } catch (error) {
+    throw captureError(cmd, error);
+  }
+};
 
 /** Append a markdown line to the workflow run's step summary. */
 export const appendSummary = (markdown: string): void => {
