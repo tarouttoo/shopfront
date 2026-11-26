@@ -15,7 +15,8 @@ export default defineConfig({
   // files sequentially (fileParallelism: false in vitest.config.ts), so
   // sharing one dist/ is safe for them. Suites that need their own tree
   // (the indexability suite scans every built HTML file) isolate
-  // themselves via SITE_OUT_DIR; the default stays the deploy dir.
+  // themselves via SITE_OUT_DIR (indexability scans every built HTML
+  // file, page-weight every built page); the default stays the deploy dir.
   outDir: process.env.SITE_OUT_DIR ?? "dist",
   // The site is public and indexable (ADR 0022): the sitemap gives the
   // search engines the full page list to crawl. Built into

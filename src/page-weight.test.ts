@@ -2,7 +2,8 @@ import { execSync } from "node:child_process";
 import { statSync } from "node:fs";
 import { beforeAll, describe, expect, it } from "vitest";
 
-/** Isolated build output so parallel built-output suites don't race on dist/. */
+/** Own build tree via SITE_OUT_DIR: the suite scans every built HTML
+ * page, and dist/ stays the deploy dir. */
 const OUT_DIR = "dist-page-weight";
 
 /**
