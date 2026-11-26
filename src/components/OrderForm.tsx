@@ -1,21 +1,15 @@
-import { useEffect, useMemo, useReducer, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { SITE } from "../data/site";
 import {
   type ClientType,
   checkoutErrors,
   sanitizePhoneInput,
 } from "../lib/checkout";
-import {
-  cartReducer,
-  EMPTY_CART,
-  loadCart,
-  resolveCart,
-  saveCart,
-} from "../lib/cart";
+import { resolveCartLines } from "../lib/cart";
 import type { Product } from "../lib/catalog";
 import { fetchCategoryProducts } from "../lib/catalogClient";
+import { getCartStore } from "../lib/cartStore";
 import { withBase } from "../lib/urls";
-import type { ModalLine } from "./CartModal";
 
 /**
  * The checkout of the Order Request page (Заявка, GLOSSARY.md): the
@@ -38,6 +32,11 @@ import type { ModalLine } from "./CartModal";
  * fact known without the data; a failed fetch keeps that degraded
  * state, and a page refresh retries losslessly (the Cart persists in
  * storage).
+ *
+ * The island owns no Cart state (ADR 0027): it reads the singleton
+ * store through useSyncExternalStore — the header badge updates in the
+ * same tick, because the submit clears through the store's one write
+ * path (dispatch persists, commits and notifies as one operation).
  */
 
 const FIELD_INPUT =
@@ -45,7 +44,8 @@ const FIELD_INPUT =
 const FIELD_LABEL = "mb-1 block text-xs font-semibold text-ink-light";
 
 export default function OrderForm() {
-  const [cart, dispatch] = useReducer(cartReducer, EMPTY_CART, () => loadCart(localStorage));
+  const store = getCartStore();
+  const cart = useSyncExternalStore(store.subscribe, store.getState);
   // null: the category JSON has not arrived yet — rows show their SKU.
   const [catalog, setCatalog] = useState<Product[] | null>(null);
 
@@ -67,11 +67,8 @@ export default function OrderForm() {
     };
   }, [hasLines]);
 
-  const lines: ModalLine[] = useMemo(
-    () =>
-      catalog === null
-        ? cart.lines.map((line) => ({ ...line, product: null }))
-        : resolveCart(cart, catalog),
+  const lines = useMemo(
+    () => resolveCartLines(cart, catalog),
     [cart, catalog],
   );
 
@@ -137,8 +134,9 @@ export default function OrderForm() {
     const found = checkoutErrors({ clientType, name, company, phone, email, agreed });
     setErrors(found);
     if (found.length > 0) return;
-    saveCart(localStorage, EMPTY_CART);
-    dispatch({ type: "clear" });
+    // The one atomic op: persist → commit → notify, so the header
+    // badge drops to zero in the same tick (ADR 0027).
+    store.dispatch({ type: "clear" });
     setSubmitted(true);
   };
 
@@ -160,7 +158,7 @@ export default function OrderForm() {
                 <button
                   type="button"
                   aria-label={`Убрать одну единицу: ${line.product?.name ?? line.sku}`}
-                  onClick={() => dispatch({ type: "setQty", sku: line.sku, qty: line.qty - 1 })}
+                  onClick={() => store.dispatch({ type: "setQty", sku: line.sku, qty: line.qty - 1 })}
                   className="h-7 w-7 rounded border border-[#d0d5dd] text-ink-light hover:bg-mist"
                 >
                   −
@@ -169,7 +167,7 @@ export default function OrderForm() {
                 <button
                   type="button"
                   aria-label={`Добавить одну единицу: ${line.product?.name ?? line.sku}`}
-                  onClick={() => dispatch({ type: "setQty", sku: line.sku, qty: line.qty + 1 })}
+                  onClick={() => store.dispatch({ type: "setQty", sku: line.sku, qty: line.qty + 1 })}
                   className="h-7 w-7 rounded border border-[#d0d5dd] text-ink-light hover:bg-mist"
                 >
                   +
@@ -177,7 +175,7 @@ export default function OrderForm() {
                 <button
                   type="button"
                   aria-label={`Убрать позицию: ${line.product?.name ?? line.sku}`}
-                  onClick={() => dispatch({ type: "remove", sku: line.sku })}
+                  onClick={() => store.dispatch({ type: "remove", sku: line.sku })}
                   className="ml-2 rounded-btn border border-primary px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary hover:text-white"
                 >
                   Удалить
@@ -192,7 +190,7 @@ export default function OrderForm() {
         </div>
         <button
           type="button"
-          onClick={() => dispatch({ type: "clear" })}
+          onClick={() => store.dispatch({ type: "clear" })}
           className="mt-4 text-xs text-ink-light hover:text-primary"
         >
           Очистить корзину
