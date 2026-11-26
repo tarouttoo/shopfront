@@ -61,9 +61,10 @@ module to know another's shape, duplicate the few lines instead.
 
 A `client:only` island's props are serialized into the prerendered HTML:
 pass a dataset and every row ships to every visitor (retro 2026-11-26 —
-the order page carried all 5818 Products as props, a 4.7 MB page, fixed
-in `1b6708c`). Islands receive IDs/params and fetch their data the way
-`fetchCategoryProducts` feeds the cart drawer.
+the order page carried all 5818 Products as props, a 4.7 MB page; fixed
+during PR #12's review, squashed into `f696a45`). Islands receive
+IDs/params and fetch their data the way `fetchCategoryProducts` feeds
+the cart drawer.
 
 ## Legal copy is re-validated against shipped behavior
 
