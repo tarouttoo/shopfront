@@ -17,8 +17,10 @@ who ships improvements without per-change pre-approval; the director reviews
   short change summary, and a rejected improvement is reverted like any
   other two-way change (ADR `0014`'s door).
 - **Adapted-source strings keep their trail.** The changed-string lists on
-  #4 remain the audit record for adaptations of approved texts (that trail
-  is what caught the §4.2 Web3Forms claim). New improvements are
+  #4 remain the audit record for adaptations of approved texts (the
+  re-approval pass is what caught the §4.2 Web3Forms claim — a verbatim
+  sentence the T5 report had missed, flagged onto the list by the PR #12
+  review). New improvements are
   operator-authored from the start — their review is the pipeline's, plus
   the director's post-hoc pass.
 - **Deliberately undecided product questions become operator-decidable** —
