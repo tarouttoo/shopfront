@@ -1,4 +1,3 @@
-import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { beforeAll, describe, expect, it } from "vitest";
 
@@ -14,7 +13,8 @@ describe("order page FAQ (built static output)", () => {
   let html: string;
 
   beforeAll(() => {
-    execSync("npx astro build", { stdio: "pipe" });
+    // dist/ is the shared build from scripts/test-build.ts (the vitest
+    // globalSetup) — suites never exec their own.
     html = readFileSync(
       new URL("../dist/order/index.html", import.meta.url),
       "utf8",

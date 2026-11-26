@@ -1,4 +1,3 @@
-import { execSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { beforeAll, describe, expect, it } from "vitest";
 import { SITE } from "./data/site";
@@ -19,13 +18,8 @@ describe("base layout (built static output)", () => {
   let css: string;
 
   beforeAll(() => {
-    // Vitest exports BASE_URL=/ into the environment; an inherited
-    // value would override the configured /shopfront base in the child
-    // astro build. Build with the environment a real `npm run build`
-    // has — no BASE_URL.
-    const env = { ...process.env };
-    delete env.BASE_URL;
-    execSync("npx astro build", { stdio: "pipe", env });
+    // dist/ is the shared build from scripts/test-build.ts (the vitest
+    // globalSetup) — suites never exec their own.
     html = readFileSync(new URL("../dist/index.html", import.meta.url), "utf8");
     // The layout chrome alone: header and footer, excluding whatever
     // page content sits between them (each page asserts its own body).

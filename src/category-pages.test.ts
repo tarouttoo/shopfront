@@ -1,4 +1,3 @@
-import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { beforeAll, describe, expect, it } from "vitest";
 import { PRODUCTS } from "./lib/catalog";
@@ -23,13 +22,8 @@ describe("category pages (built static output)", () => {
   let dataJson: string;
 
   beforeAll(() => {
-    // Vitest exports BASE_URL=/ into the environment; an inherited
-    // value would override the configured /shopfront base in the child
-    // astro build. Build with the environment a real `npm run build`
-    // has — no BASE_URL.
-    const env = { ...process.env };
-    delete env.BASE_URL;
-    execSync("npx astro build", { stdio: "pipe", env });
+    // dist/ is the shared build from scripts/test-build.ts (the vitest
+    // globalSetup) — suites never exec their own.
     nasosy = readFileSync(new URL("../dist/nasosy/index.html", import.meta.url), "utf8");
     kotly = readFileSync(new URL("../dist/kotly/index.html", import.meta.url), "utf8");
     gorelki = readFileSync(new URL("../dist/gorelki/index.html", import.meta.url), "utf8");

@@ -1,10 +1,18 @@
-import { execSync } from "node:child_process";
-import { statSync } from "node:fs";
+import { readdirSync, statSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { beforeAll, describe, expect, it } from "vitest";
 
-/** Own build tree via SITE_OUT_DIR: the suite scans every built HTML
- * page, and dist/ stays the deploy dir. */
-const OUT_DIR = "dist-page-weight";
+/** Every built page (<route>/index.html) under dist/, depth-first.
+ * dist/ is the shared build from scripts/test-build.ts (the vitest
+ * globalSetup) — suites never exec their own. */
+const indexPagesUnder = (dir: URL, root: string): { route: string; path: string }[] =>
+  readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const child = new URL(`${entry.name}${entry.isDirectory() ? "/" : ""}`, dir);
+    if (entry.isDirectory()) return indexPagesUnder(child, root);
+    return entry.name === "index.html"
+      ? [{ route: fileURLToPath(child).slice(root.length), path: fileURLToPath(child) }]
+      : [];
+  });
 
 /**
  * Page-weight budget (2026-11-26 retro over PR #12): the 4.7 MB /order
@@ -43,18 +51,11 @@ describe("page-weight budget (built static output)", () => {
   let pages: { route: string; bytes: number }[];
 
   beforeAll(() => {
-    execSync("npx astro build", {
-      stdio: "pipe",
-      env: { ...process.env, SITE_OUT_DIR: OUT_DIR },
-    });
-    pages = execSync(`find ${OUT_DIR} -name index.html`, { encoding: "utf8" })
-      .trim()
-      .split("\n")
-      .filter(Boolean)
-      .map((p) => ({
-        route: p.slice(OUT_DIR.length + 1),
-        bytes: statSync(p).size,
-      }));
+    const dist = new URL("../dist/", import.meta.url);
+    pages = indexPagesUnder(dist, fileURLToPath(dist)).map(({ route, path }) => ({
+      route,
+      bytes: statSync(path).size,
+    }));
   });
 
   it("builds pages at all", () => {

@@ -12,8 +12,12 @@ export default defineConfig({
     environment: "node",
     include: ["src/**/*.test.{ts,tsx}", ".sandcastle/**/*.test.ts", "docs/**/*.test.ts"],
     testTimeout: 30_000,
-    // Built-output suites (order FAQ, base layout) each exec `astro build`
-    // into the same dist/ — concurrent builds corrupt it mid-prerender.
+    // The built-output suites read one shared dist/, built once before
+    // any file runs by the globalSetup (scripts/test-build.ts) — no
+    // suite execs its own build. Files still run sequentially: the
+    // pipeline suites spawn child processes and a serialized run keeps
+    // their failures attributable.
+    globalSetup: ["./scripts/test-build.ts"],
     fileParallelism: false,
   },
 });
