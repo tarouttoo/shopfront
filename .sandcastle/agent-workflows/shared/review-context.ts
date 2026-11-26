@@ -23,30 +23,46 @@ export interface PullRequestContext {
 }
 
 /**
+ * One diff capture, split into ok/error so the compiler sees the difference
+ * between a failed capture and a legitimately empty diff — the two need
+ * opposite handling in captureDiff (CODING_STANDARDS: no silent fallbacks
+ * for invariants TypeScript cannot see — extract a helper returning a
+ * pair, let null checks compose).
+ */
+type DiffAttempt = { ok: true; diff: string } | { ok: false; error: Error };
+
+const attemptDiff = (cmd: string): DiffAttempt => {
+  try {
+    return { ok: true, diff: sh(cmd) };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error : new Error(String(error)),
+    };
+  }
+};
+
+/**
  * The PR's review surface: `main...HEAD` (merge-base) first, `main..HEAD`
  * as the fallback. No silent fallbacks: when the fallback also fails, the
  * FIRST error's message propagates — its wrapped shape (command, capture
  * limit, captured bytes) is the forensic surface for a maxBuffer overflow,
- * while rethrowing the fallback's would bury which capture actually died.
+ * while rethrowing the fallback's would bury which capture actually died
+ * (issue #18: the exact "no silent fallbacks" shape the standards ban).
  */
 export const captureDiff = (): string => {
-  let firstError: Error | undefined;
-  const primary = (() => {
-    try {
-      return sh("git diff main...HEAD");
-    } catch (error) {
-      firstError = error instanceof Error ? error : new Error(String(error));
-      return "";
-    }
-  })();
-  if (primary.length > 0) {
-    return primary;
+  const primary = attemptDiff("git diff main...HEAD");
+  if (primary.ok && primary.diff.length > 0) {
+    return primary.diff;
   }
-  try {
-    return sh("git diff main..HEAD");
-  } catch (fallbackError) {
-    throw firstError ?? fallbackError;
+  const fallback = attemptDiff("git diff main..HEAD");
+  if (fallback.ok) {
+    return fallback.diff;
   }
+  // Both failed: the primary's error is the one that matters. If the
+  // primary somehow succeeded (empty) and only the fallback died, the
+  // fallback's error is the only honest one to throw.
+  throw primary.ok ? fallback.error : primary.error;
 };
 
 export const fetchPullRequestContext = (
