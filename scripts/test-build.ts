@@ -27,7 +27,9 @@ const STAMP_PATH = path.join(ROOT, "dist", ".test-build-stamp");
  * committed feeder output; scripts/build-catalog.ts runs by hand, never
  * inside the build). */
 const INPUT_DIRS = ["src", "public"];
-const INPUT_FILES = ["astro.config.mjs", "package.json"];
+// tsconfig.json is a build input too: Astro reads it during the build
+// (path aliases, compile target).
+const INPUT_FILES = ["astro.config.mjs", "package.json", "tsconfig.json"];
 
 const newestMtime = (dir: string): number =>
   readdirSync(dir, { withFileTypes: true }).reduce<number>((max, entry) => {
