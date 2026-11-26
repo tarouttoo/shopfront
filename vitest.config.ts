@@ -4,7 +4,7 @@ import { defineConfig } from "vitest/config";
  * Test discovery at the repo root, independent of the Astro Vite root:
  * pipeline tests (.sandcastle) and product tests (src) run in a plain
  * node environment. The cart logic is tested in its pure module per
- * CODING_STANDARDS ("interaction logic is tested in the reducers, not
+ * CODING_STANDARDS ("interaction logic is tested in the pure modules, not
  * the rendered App"), so no DOM environment is needed.
  */
 export default defineConfig({

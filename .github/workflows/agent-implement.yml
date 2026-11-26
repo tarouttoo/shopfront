@@ -180,9 +180,11 @@ jobs:
 
       # The evidence prompt has the agent screenshot the UI; Electron needs a
       # display even headless, hence xvfb (ADR 0014). The spec routes don't
-      # capture evidence.
+      # capture evidence, and without scripts/evidence-screenshot.mjs (the
+      # prompt's own EVIDENCE condition) there is nothing to display — skip
+      # the install instead of paying for it on every run (retro 2026-11-26).
       - name: Install xvfb for UI evidence
-        if: steps.shape.outputs.route == 'implement'
+        if: steps.shape.outputs.route == 'implement' && hashFiles('scripts/evidence-screenshot.mjs') != ''
         run: |
           sudo apt-get update
           sudo apt-get install -y xvfb

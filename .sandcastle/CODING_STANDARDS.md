@@ -19,7 +19,11 @@ When a commit changes behavior, update every comment, JSDoc line, and
 contract header that described the old behavior in the same commit. A doc
 claim about other modules ("the pipeline calls this") must be true and
 checkable against the code. A contract header (byte formats, invariants —
-see ADR 0006) is a reviewable claim pinned by a test, not prose.
+see ADR 0006) is a reviewable claim pinned by a test, not prose. The rule
+covers build and test configuration prose too: two config files describing
+one mechanism must agree (retro 2026-11-26 — the `astro.config.mjs` outDir
+comment contradicted `vitest.config.ts`'s `fileParallelism: false` through
+PR #12's review).
 
 ## Optional parameters may not silently weaken a guarantee
 
@@ -53,23 +57,36 @@ Extract a shared helper across modules only when the code is pure and
 identical in meaning. If sharing would create an import cycle or force one
 module to know another's shape, duplicate the few lines instead.
 
+## Islands receive IDs and params, never datasets
+
+A `client:only` island's props are serialized into the prerendered HTML:
+pass a dataset and every row ships to every visitor (retro 2026-11-26 —
+the order page carried all 5818 Products as props, a 4.7 MB page; fixed
+during PR #12's review, squashed into `f696a45`). Islands receive
+IDs/params and fetch their data the way `fetchCategoryProducts` feeds
+the cart drawer.
+
+## Legal copy is re-validated against shipped behavior
+
+When a change strips or stubs the behavior a user-facing sentence
+describes, the sentence is flagged for re-approval in the same change —
+not shipped as-is (retro 2026-11-26 — `/privacy` shipped «через сервис
+Web3Forms» describing a submitter Spec #4 strips everywhere; reported on
+#4, corrected when intake lands).
+
 ## Rejection strings are Russian glossary words beside their reducer
 
 A user-facing rejection message is written where the rejection is produced
-(the editor/canvas reducer), uses only GLOSSARY.md terms, and tells the
-operator how to proceed. Extract a named constant only when two sites must
-stay identical.
+(the cart reducer and checkout validators in `src/lib`), uses only
+GLOSSARY.md terms, and tells the visitor how to proceed. Extract a named
+constant only when two sites must stay identical.
 
-## Reject at the earliest provable click
+## Interaction logic is tested in the pure modules, not the rendered App
 
-When a drawing gesture can only fail at a later click, reject as soon as
-the failure is provable from the clicks so far, and keep the draft alive
-so the operator can correct the bad click.
-
-## Interaction logic is tested in the reducers, not the rendered App
-
-Cursor- and gesture-dependent behavior gets unit tests on the pure modules
-(`editor`, `canvas/draw`); App tests stay render-level.
+Interactive behavior gets unit tests on the pure modules (`src/lib/*` —
+cart, checkout, catalog client); component and built-output tests stay
+render-level. (Adapted from the robostudio "reducers" rule, 2026-11-26:
+this repo has no editor canvas — the pure modules are the seam.)
 
 ---
 
@@ -77,3 +94,10 @@ Bootstrap harvest: the review verdicts of PRs #48–#50 ("Rules this review
 wanted and could not find"), deduped — 2026-11-24. Mechanical candidates
 from the same verdicts (e.g. a glossary-conformance check for UI strings)
 are retro material for the checks layer, not rules here.
+
+Retro harvest 2026-11-26: PR #12's review verdict ("Rules this review
+wanted and could not find") and the parallel PR #2 retro handoff —
+islands/params, legal copy, config-prose clarification; pruned the CAD
+click rule, rewrote the reducers rule in shopfront vocabulary. Mechanical
+candidates from the same verdicts (page-weight budget #16, dist build-once
+#17) are tickets, not rules here.
