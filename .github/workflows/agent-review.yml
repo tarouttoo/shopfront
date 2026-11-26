@@ -159,24 +159,47 @@ jobs:
         run: gh pr ready "$PR_NUMBER" || true
 
       # The human merge click, automated (ADR 0011), tightened by the
-      # course's merge criteria (ADR 0014): a clean review — zero inline
-      # comments in the extracted payload — plus a body-declared two-way
-      # door requests a squash auto-merge, which GitHub performs as soon as
-      # the PR is mergeable.
+      # course's merge criteria (ADR 0014) and by ADR 0023: a clean review
+      # — zero inline comments in the extracted payload, no hold flag in
+      # the verdict — plus a body-declared two-way door requests a squash
+      # auto-merge, which GitHub performs as soon as the PR is mergeable.
       # The request rides AGENT_PAT when present: GITHUB_TOKEN-authored PRs
       # refuse auto-merge requests from their own GITHUB_TOKEN, and the PAT
       # keeps the eventual merge attributed to the maintainer, not
       # github-actions[bot]. Findings hold the merge loudly instead: the
       # comment names the retry loop (agent:implement-pr, then re-add
       # agent:review) so a held PR never silently merges past unresolved
-      # findings.
+      # findings. A verdict carrying holds_merge (an unfixed
+      # factory-breaking finding, ADR 0023) holds before that, for the
+      # operator, not the fix loop.
       - name: Request auto-merge on clean review
         if: success()
         env:
           PAYLOAD: ${{ runner.temp }}/review_payload.json
+          HOLD: ${{ runner.temp }}/verdict.json
           AGENT_PAT: ${{ secrets.AGENT_PAT }}
           GITHUB_TOKEN_FALLBACK: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # ADR 0023: the factory is its own runtime — a merged
+          # factory-breaking change damages every subsequent run, worse
+          # than a held PR. The review declares the hold in its verdict
+          # (verdict.json, written by review.ts) and this check runs
+          # first: an unfixed `.github/**` or
+          # `.sandcastle/agent-workflows/**` break holds the merge for
+          # the operator, not the fix loop. An unreadable verdict holds
+          # too — like the merger's blocker count, a safety signal that
+          # cannot be read defaults to the conservative outcome.
+          holds=$(jq -r 'if (.holds_merge | type) == "boolean" then (.holds_merge | tostring) else "unreadable" end' "$HOLD" 2>/dev/null || echo unreadable)
+          if [ "$holds" != "false" ]; then
+            if [ "$holds" = "true" ]; then
+              reason="the review flagged an unfixed factory-breaking finding (ADR 0023) — a deterministic break of agent runs on \`.github/**\` or \`.sandcastle/agent-workflows/**\` it could not fix in scope. See the review summary above"
+            else
+              reason="the review verdict (\`verdict.json\`) is missing or unreadable, so the gate cannot rule out a factory-breaking finding (ADR 0023)"
+            fi
+            echo "Holding the merge: $reason."
+            gh pr comment "$PR_NUMBER" --body "Auto-merge held: $reason. This hold waits for the operator — fix the finding (or the drift), then re-add \`agent:review\`."
+            exit 0
+          fi
           findings=$(jq '.inlineComments | length' "$PAYLOAD")
           if [ "$findings" -gt 0 ]; then
             echo "Review posted $findings inline comment(s) — holding the merge."

@@ -42,6 +42,19 @@ Respond to unresolved human review threads when useful:
 - Decline: do not change code, reply with why
 - Defer: no reply, only for stale/context-only comments
 
+# MERGE HOLD ON A FACTORY-BREAKING FINDING (ADR 0023)
+
+The factory is its own runtime: a merged change that deterministically
+breaks agent runs damages every subsequent run — worse than a held PR.
+When you flag a finding on `.github/**` or
+`.sandcastle/agent-workflows/**` whose effect is a deterministic break
+of agent runs, and you cannot fix it in scope (`.github/` is
+off-limits to your edits), set `holds_merge: true` in your output: the
+merge gate holds the PR for the operator instead of running the fix
+loop. All other findings — every product-side finding included — keep
+today's behavior: flag them as inline comments and set
+`holds_merge: false`.
+
 # PR BODY AUDIT
 
 Fetch the PR body (`gh pr view {{PR_NUMBER}} --json body`) and audit its

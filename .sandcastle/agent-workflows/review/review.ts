@@ -90,6 +90,10 @@ try {
   writeJson("replies.json", validReplies);
   writeText("summary.md", result.output.summary);
   writeText("verdict.txt", result.commits.length > 0 ? "improved" : "clean");
+  // The merge gate's input (ADR 0023): an unfixed factory-breaking
+  // finding — declared by the review in its output — holds the
+  // auto-merge for the operator instead of the flag-and-merge loop.
+  writeJson("verdict.json", { holds_merge: result.output.holdsMerge });
 
   console.log("Review complete.");
   console.log(`Commits: ${result.commits.length}.`);

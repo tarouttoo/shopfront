@@ -13,9 +13,17 @@ Do not include text outside the `<output>` block.
   ],
   "replies": [
     { "commentId": "GraphQL node id from PR_COMMENTS_JSON", "body": "Markdown reply" }
-  ]
+  ],
+  "holds_merge": false
 }
 </output>
 ```
+
+`holds_merge` is always present, true or false: `true` only when you
+flagged a finding you cannot fix in scope, on `.github/**` or
+`.sandcastle/agent-workflows/**`, whose effect is a deterministic break
+of agent runs — the merge gate then holds the PR for the operator (ADR
+0023). Every other finding, including all product-side findings, is
+`false`.
 
 Use empty arrays when there are no inline comments or replies.

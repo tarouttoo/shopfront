@@ -282,6 +282,106 @@ describe("Update PR body step (agent-implement-pr.yml)", () => {
   });
 });
 
+describe("Request auto-merge on clean review step", () => {
+  const GATE_STEP = "Request auto-merge on clean review";
+
+  /** A gh stub covering the gate's full happy path, marking each
+   *  decisive call on stderr so tests can assert what the step did:
+   *  `auto-merge requested` only when gh pr merge ran, `hold comment:`
+   *  carrying every comment body it posted. */
+  const mergeGateStub = `
+    prev=""
+    for a in "$@"; do
+      if [ "$prev" = "--body" ]; then echo "hold comment: $a" >&2; fi
+      prev="$a"
+    done
+    case "$*" in
+      *"pr merge"*) echo "auto-merge requested" >&2; exit 0;;
+      *"pr comment"*) exit 0;;
+      *"--json body"*) cat "$PR_BODY_FILE";;
+      *"--json headRefOid"*) echo "headsha123";;
+      *"check-runs"*) echo '[{"name":"ci","status":"completed","conclusion":"success"}]';;
+      *) echo "unexpected gh call: $*" >&2; exit 1;;
+    esac
+  `;
+
+  const gateOptions = (verdictJson?: string) => ({
+    prBody: "## Merge Danger\n\n**Door:** two-way\n",
+    files: {
+      "review_payload.json": '{"inlineComments":[]}',
+      ...(verdictJson === undefined ? {} : { "verdict.json": verdictJson }),
+    },
+    env: {
+      PAYLOAD: "review_payload.json",
+      HOLD: "verdict.json",
+      AGENT_PAT: "agent-pat",
+      GITHUB_TOKEN_FALLBACK: "github-token",
+    },
+  });
+
+  it("does not auto-merge a verdict with an unfixed .github/ breaking finding (ADR 0023)", async () => {
+    // PR #13: the review verified live that the new preflight 403s for
+    // GITHUB_TOKEN — as merged, every implement run fails at minute 0 —
+    // and could not fix it (.github/ is off-limits to review edits); the
+    // gate merged the PR ~80 s after that verdict. The verdict's
+    // holds_merge flag must hold the merge for the operator instead.
+    const result = await runStep(
+      runScriptOf(GATE_STEP, REVIEW_WORKFLOW_PATH),
+      mergeGateStub,
+      gateOptions('{"holds_merge":true}'),
+    );
+    expect(result.status).toBe(0); // a hold is a legitimate outcome
+    expect(result.stderr).not.toContain("auto-merge requested");
+    expect(result.stderr).toContain("hold comment:");
+    expect(result.stderr).toContain("ADR 0023");
+  });
+
+  it("still auto-merges a product-side verdict (holds_merge false)", async () => {
+    // Product findings keep today's flag-and-merge behavior: with zero
+    // inline comments, a two-way door and green CI, the merge requests.
+    const result = await runStep(
+      runScriptOf(GATE_STEP, REVIEW_WORKFLOW_PATH),
+      mergeGateStub,
+      gateOptions('{"holds_merge":false}'),
+    );
+    expect(result.status).toBe(0);
+    expect(result.stderr).toContain("auto-merge requested");
+  });
+
+  it("holds when the verdict file is missing or unreadable (the barrier holds)", async () => {
+    // Same rule as the merger's unreadable blocker count: a safety
+    // signal that cannot be read defaults to the conservative outcome —
+    // the gate must not merge past a verdict it could not check.
+    const result = await runStep(
+      runScriptOf(GATE_STEP, REVIEW_WORKFLOW_PATH),
+      mergeGateStub,
+      gateOptions(),
+    );
+    expect(result.status).toBe(0);
+    expect(result.stderr).not.toContain("auto-merge requested");
+    expect(result.stderr).toContain("verdict");
+  });
+
+  it("holds product findings with today's fix-loop comment, not the operator hold", async () => {
+    const result = await runStep(
+      runScriptOf(GATE_STEP, REVIEW_WORKFLOW_PATH),
+      mergeGateStub,
+      {
+        ...gateOptions('{"holds_merge":false}'),
+        files: {
+          "review_payload.json":
+          '{"inlineComments":[{"path":"src/a.ts","line":1,"body":"fix"}]}',
+          "verdict.json": '{"holds_merge":false}',
+        },
+      },
+    );
+    expect(result.status).toBe(0);
+    expect(result.stderr).not.toContain("auto-merge requested");
+    expect(result.stderr).toContain("agent:implement-pr");
+    expect(result.stderr).not.toContain("ADR 0023");
+  });
+});
+
 describe("Post PR review step", () => {
   it("substitutes GitHub template variables in the review payload", async () => {
     // The review prompts dictate $GITHUB_* template links; PR #14's verdict
