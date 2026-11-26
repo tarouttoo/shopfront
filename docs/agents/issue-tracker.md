@@ -27,8 +27,10 @@ File issues only into the user's own repo. Never file into `mattpocock/skills` (
 - **Comment / label / close**: `gh pr comment`, `gh pr close`. For labels,
   `gh pr edit --add-label` fails here (GraphQL Projects-classic deprecation;
   two sessions hit it) — use the REST API:
-  `gh api --method POST repos/<owner>/<repo>/issues/<n>/labels -f 'labels[]=…'`
-  (and `--method DELETE` with the same `-f` to remove).
+  `gh api --method POST repos/<owner>/<repo>/issues/<n>/labels -f 'labels[]=…'`.
+  Removal is path-based, one label per call:
+  `gh api --method DELETE repos/<owner>/<repo>/issues/<n>/labels/<name>` —
+  DELETE without the label name strips *all* labels from the issue.
 
 GitHub shares one number space across issues and PRs, so a bare `#42` may be either: resolve with `gh pr view 42` and fall back to `gh issue view 42`.
 
