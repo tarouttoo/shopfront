@@ -57,6 +57,15 @@ describe("order page FAQ (built static output)", () => {
     expect(faqBlock).not.toMatch(/заказ|оплата на сайте/);
   });
 
+  it("order page never inlines the catalog — the island fetches the asset", () => {
+    // The composition island resolves line names lazily from
+    // data/nasosy.json (the Cart drawer's seam). Passing the 5818
+    // positions as island props would serialize the whole dataset into
+    // the prerendered HTML (~4.7 MB page) — this pins the lazy fetch.
+    expect(html).not.toContain("BM 1-2A A-D-E-HQQE");
+    expect(html.length).toBeLessThan(100_000);
+  });
+
   it("carries no payment UI anywhere in the page shell", () => {
     // ADR 0021: no online payment. The checkout select («Способ
     // оплаты» / «Оплата картой» / безнал) and its hints must not

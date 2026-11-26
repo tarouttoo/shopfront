@@ -1,4 +1,4 @@
-import { useMemo, useReducer, useState } from "react";
+import { useEffect, useMemo, useReducer, useState } from "react";
 import { SITE } from "../data/site";
 import {
   type ClientType,
@@ -13,7 +13,9 @@ import {
   saveCart,
 } from "../lib/cart";
 import type { Product } from "../lib/catalog";
+import { fetchCategoryProducts } from "../lib/catalogClient";
 import { withBase } from "../lib/urls";
+import type { ModalLine } from "./CartModal";
 
 /**
  * The checkout of the Order Request page (Заявка, GLOSSARY.md): the
@@ -28,15 +30,50 @@ import { withBase } from "../lib/urls";
  * (field labels, inputs, the segmented buyer-type control, the consent
  * line) as Tailwind tokens. UI wording stays glossary-only (Заявка —
  * this file must stay greppably free of the banned retail stem).
+ *
+ * Line names resolve against the Catalog loaded the Cart drawer's way:
+ * fetched lazily from the build-time per-category asset, never passed
+ * as island props — props would serialize all 5818 positions into the
+ * prerendered HTML. Until it arrives a row shows its SKU, the only
+ * fact known without the data; a failed fetch keeps that degraded
+ * state, and a page refresh retries losslessly (the Cart persists in
+ * storage).
  */
 
 const FIELD_INPUT =
   "w-full rounded-lg border border-[#d0d5dd] px-3 py-2.5 text-sm text-ink placeholder:text-slate-400 focus:border-primary focus:outline-none";
 const FIELD_LABEL = "mb-1 block text-xs font-semibold text-ink-light";
 
-export default function OrderForm({ products }: { products: Product[] }) {
+export default function OrderForm() {
   const [cart, dispatch] = useReducer(cartReducer, EMPTY_CART, () => loadCart(localStorage));
-  const lines = useMemo(() => resolveCart(cart, products), [cart, products]);
+  // null: the category JSON has not arrived yet — rows show their SKU.
+  const [catalog, setCatalog] = useState<Product[] | null>(null);
+
+  const hasLines = cart.lines.length > 0;
+
+  useEffect(() => {
+    if (!hasLines) return;
+    let cancelled = false;
+    fetchCategoryProducts("nasosy").then(
+      (products) => {
+        if (!cancelled) setCatalog(products);
+      },
+      // Keep the composition usable with SKU-only rows; a page
+      // refresh retries losslessly, so the failure needs no UI here.
+      () => {},
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [hasLines]);
+
+  const lines: ModalLine[] = useMemo(
+    () =>
+      catalog === null
+        ? cart.lines.map((line) => ({ ...line, product: null }))
+        : resolveCart(cart, catalog),
+    [cart, catalog],
+  );
 
   const [clientType, setClientType] = useState<ClientType>("Физлицо");
   const [name, setName] = useState("");
@@ -114,12 +151,12 @@ export default function OrderForm({ products }: { products: Product[] }) {
             >
               <div>
                 <span className="font-mono text-xs text-ink-light">{line.sku}</span>
-                <p className="text-sm font-medium text-ink">{line.product.name}</p>
+                <p className="text-sm font-medium text-ink">{line.product?.name ?? line.sku}</p>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  aria-label={`Убрать одну единицу: ${line.product.name}`}
+                  aria-label={`Убрать одну единицу: ${line.product?.name ?? line.sku}`}
                   onClick={() => dispatch({ type: "setQty", sku: line.sku, qty: line.qty - 1 })}
                   className="h-7 w-7 rounded border border-[#d0d5dd] text-ink-light hover:bg-mist"
                 >
@@ -128,7 +165,7 @@ export default function OrderForm({ products }: { products: Product[] }) {
                 <span className="w-8 text-center text-sm font-medium text-ink">{line.qty}</span>
                 <button
                   type="button"
-                  aria-label={`Добавить одну единицу: ${line.product.name}`}
+                  aria-label={`Добавить одну единицу: ${line.product?.name ?? line.sku}`}
                   onClick={() => dispatch({ type: "setQty", sku: line.sku, qty: line.qty + 1 })}
                   className="h-7 w-7 rounded border border-[#d0d5dd] text-ink-light hover:bg-mist"
                 >
@@ -136,7 +173,7 @@ export default function OrderForm({ products }: { products: Product[] }) {
                 </button>
                 <button
                   type="button"
-                  aria-label={`Убрать позицию: ${line.product.name}`}
+                  aria-label={`Убрать позицию: ${line.product?.name ?? line.sku}`}
                   onClick={() => dispatch({ type: "remove", sku: line.sku })}
                   className="ml-2 rounded-btn border border-primary px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary hover:text-white"
                 >
