@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Product } from "../lib/catalog";
 import { fetchCategoryProducts } from "../lib/catalogClient";
+import { getCartStore } from "../lib/cartStore";
 import {
   MODELS_PAGE_SIZE,
   PUMP_TYPE_OPTIONS,
@@ -78,11 +79,14 @@ function Pager({
  * build-time per-category asset (5818 positions never enter the page
  * bundle); search, filters and pagination run fully client-side.
  *
- * The «В корзину» buttons carry `data-add-sku`: the header Cart island
- * (CartButtons) delegates the clicks into the cart reducer and opens
- * the drawer — one cart owner per page, as in T1.
+ * The «В корзину» buttons publish to the singleton Cart store — a typed
+ * `dispatch({ type: "add", sku })`, the store's one write path (ADR
+ * 0027). The island stays publish-only: it holds no store listener, so
+ * Cart changes never re-render the 5818-position table; the header
+ * Cart island opens the drawer on the change.
  */
 export default function ProductTable() {
+  const store = getCartStore();
   const [load, setLoad] = useState<LoadState>({ phase: "loading" });
   const [type, setType] = useState<PumpTypeFilter>("all");
   const [query, setQuery] = useState("");
@@ -242,7 +246,7 @@ export default function ProductTable() {
                     <div className="flex items-center justify-center px-3.5 py-3">
                       <button
                         type="button"
-                        data-add-sku={product.sku}
+                        onClick={() => store.dispatch({ type: "add", sku: product.sku })}
                         className="cursor-pointer rounded-btn border-none bg-primary px-3 py-2 text-[13px] font-semibold whitespace-nowrap text-white hover:bg-primary-dark"
                       >
                         В корзину
@@ -362,7 +366,7 @@ export default function ProductTable() {
                     {single ? (
                       <button
                         type="button"
-                        data-add-sku={first.sku}
+                        onClick={() => store.dispatch({ type: "add", sku: first.sku })}
                         className="mt-2.5 flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-btn border-none bg-primary px-3.5 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark"
                       >
                         В корзину

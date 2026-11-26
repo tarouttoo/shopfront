@@ -1,24 +1,22 @@
-import { useEffect, useReducer, useRef, useState } from "react";
-import {
-  cartCount,
-  cartReducer,
-  EMPTY_CART,
-  loadCart,
-  resolveCart,
-  saveCart,
-} from "../lib/cart";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { cartCount, resolveCartLines } from "../lib/cart";
+import { getCartStore } from "../lib/cartStore";
 import { fetchCategoryProducts } from "../lib/catalogClient";
 import type { Product } from "../lib/catalog";
-import CartModal, { type ModalLine } from "./CartModal";
+import CartModal from "./CartModal";
 
 /**
  * The header Cart button (Корзина, GLOSSARY.md) with its count badge
- * and the Cart drawer, mounted by the base layout on every page.
- * Add-to-cart clicks from any `[data-add-sku]` button on the page are
- * delegated into the cart reducer and open the drawer (the approved
- * addToCart → openCart behavior); every reducer transition is
- * persisted, so the badge, a reload and the Order Request form all
- * read the same stored Cart.
+ * and the Cart drawer, mounted by the base layout on every page. The
+ * island owns no Cart state (ADR 0027): it reads the singleton store —
+ * the badge re-renders through useSyncExternalStore, and every
+ * transition persists through the store's one write path, so the
+ * badge, a reload and the Order Request form all read the same stored
+ * Cart.
+ *
+ * The drawer-open policy listens once: a local add pulses the badge and
+ * opens the drawer (the approved addToCart → openCart behavior); a
+ * remote (cross-tab) change never does.
  *
  * Drawer rows need Product names: the category JSON loads lazily on
  * first open (never inline in the bundle). Until it arrives a line
@@ -26,7 +24,8 @@ import CartModal, { type ModalLine } from "./CartModal";
  * asset is the one orderable category today (Spec #4).
  */
 export default function CartButtons() {
-  const [cart, dispatch] = useReducer(cartReducer, EMPTY_CART, () => loadCart(localStorage));
+  const store = getCartStore();
+  const cart = useSyncExternalStore(store.subscribe, store.getState);
   const [pulse, setPulse] = useState(0);
   const [open, setOpen] = useState(false);
   // null: the category JSON has not arrived yet — rows show their SKU.
@@ -34,24 +33,13 @@ export default function CartButtons() {
   const requested = useRef(false);
 
   useEffect(() => {
-    const onClick = (event: MouseEvent) => {
-      const target = event.target as HTMLElement | null;
-      const button = target?.closest<HTMLElement>("[data-add-sku]");
-      const sku = button?.dataset.addSku;
-      if (!sku) return;
-      dispatch({ type: "add", sku });
-      setPulse((value) => value + 1);
-      setOpen(true);
-    };
-    document.addEventListener("click", onClick);
-    return () => document.removeEventListener("click", onClick);
-  }, []);
-
-  // Persistence rides the reducer transitions: an add anywhere on the
-  // page lands in storage, where loadCart picks it up on the next page.
-  useEffect(() => {
-    saveCart(localStorage, cart);
-  }, [cart]);
+    return store.subscribe((change) => {
+      if (change.source === "local" && change.action.type === "add") {
+        setPulse((value) => value + 1);
+        setOpen(true);
+      }
+    });
+  }, [store]);
 
   useEffect(() => {
     if (!open || requested.current) return;
@@ -65,11 +53,7 @@ export default function CartButtons() {
     );
   }, [open]);
 
-  const lines: ModalLine[] =
-    catalog === null
-      ? cart.lines.map((line) => ({ ...line, product: null }))
-      : resolveCart(cart, catalog);
-
+  const lines = resolveCartLines(cart, catalog);
   const count = cartCount(cart);
 
   return (
@@ -106,8 +90,8 @@ export default function CartButtons() {
         open={open}
         lines={lines}
         onClose={() => setOpen(false)}
-        onSetQty={(sku, qty) => dispatch({ type: "setQty", sku, qty })}
-        onRemove={(sku) => dispatch({ type: "remove", sku })}
+        onSetQty={(sku, qty) => store.dispatch({ type: "setQty", sku, qty })}
+        onRemove={(sku) => store.dispatch({ type: "remove", sku })}
       />
     </>
   );

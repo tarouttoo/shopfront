@@ -85,6 +85,24 @@ export function resolveCart(cart: Cart, products: Product[]): Array<CartLine & {
   return resolved;
 }
 
+/**
+ * Lines joined with their Products for rendering (the Cart drawer and
+ * the Order Request composition). `products === null` — the Catalog
+ * data has not arrived yet (the per-category JSON loads lazily): every
+ * line passes through with `product: null`, so the row shows its SKU,
+ * the only fact known without the data. With the Catalog given, the
+ * existing `resolveCart` semantics hold: stale SKUs are dropped — the
+ * Catalog, not the storage, defines what exists (ADR 0027).
+ */
+export interface ResolvedCartLine extends CartLine {
+  product: Product | null;
+}
+
+export function resolveCartLines(cart: Cart, products: Product[] | null): ResolvedCartLine[] {
+  if (products === null) return cart.lines.map((line) => ({ ...line, product: null }));
+  return resolveCart(cart, products);
+}
+
 export function loadCart(storage: Pick<Storage, "getItem">): Cart {
   const raw = storage.getItem(CART_STORAGE_KEY);
   if (raw === null) return EMPTY_CART;
