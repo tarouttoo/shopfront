@@ -57,7 +57,13 @@ describe("privacy page (built static output)", () => {
   it("carries the Operator's contacts from site.ts in section 6 and the rights notice", () => {
     // Both links live in the page content (section 5.1 and section 6);
     // the base frame carries its own mailto links outside <main>.
-    const main = html.slice(html.indexOf("<main"), html.indexOf("</main>"));
+    const mainStart = html.indexOf("<main");
+    const mainEnd = html.indexOf("</main>");
+    // Positional assertions start with presence assertions: a vanished
+    // marker would reshape the slice instead of failing loudly.
+    expect(mainStart).toBeGreaterThan(-1);
+    expect(mainEnd).toBeGreaterThan(mainStart);
+    const main = html.slice(mainStart, mainEnd);
     expect(main.split(`mailto:${SITE.email}`)).toHaveLength(3);
     expect(html).toContain(`Телефон: ${SITE.phones[0].display}`);
     expect(html).toContain(`Адрес: ${SITE.address}`);

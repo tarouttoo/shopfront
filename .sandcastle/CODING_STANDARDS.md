@@ -2,7 +2,8 @@
 
 Judgment rules the review pass (`.agents/skills/code-review/`) applies.
 Mechanical rules are checks, not prose: `npm run lint` (oxlint) and the
-layer test (`src/layers.test.ts`, ADR 0003) already carry those. New rules
+content pins over the built output (`src/*.test.ts`) already carry
+those. New rules
 land only through a Retro harvest (`docs/agents/retro.md`), each traced to
 a real finding — never by fiat.
 
@@ -36,6 +37,15 @@ a required key's absence is a rejection, not a default: `record.key ??
 fallback` there is the exact `?? 0`-shape this rule bans (retro
 2026-11-25 — a drifted `blockedBy` key silently dropped a Spec's
 blocking edges, Spec #59).
+
+## Positional assertions start with presence assertions
+
+An ordering or containment check that compares two `indexOf` results
+asserts both markers exist before comparing. Compared raw, the check
+passes vacuously once a marker vanishes — the comparison silently
+degrades from "order" to "both -1" (retro 2026-11-25 — PR #2's
+form-before-FAQ ordering assertion survived deleting the form heading;
+fixed by the review pass, merged as `bda84fb`).
 
 ## Small honest duplication over coupling
 

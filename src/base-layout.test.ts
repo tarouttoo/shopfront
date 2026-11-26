@@ -29,8 +29,19 @@ describe("base layout (built static output)", () => {
     html = readFileSync(new URL("../dist/index.html", import.meta.url), "utf8");
     // The layout chrome alone: header and footer, excluding whatever
     // page content sits between them (each page asserts its own body).
-    const header = html.slice(html.indexOf("<header"), html.indexOf("</header>"));
-    const footer = html.slice(html.indexOf("<footer"), html.indexOf("</footer>"));
+    const headerStart = html.indexOf("<header");
+    const headerEnd = html.indexOf("</header>");
+    const footerStart = html.indexOf("<footer");
+    const footerEnd = html.indexOf("</footer>");
+    // Positional assertions start with presence assertions: a vanished
+    // marker would turn the shell slice into a silent partial match.
+    for (const at of [headerStart, headerEnd, footerStart, footerEnd]) {
+      expect(at).toBeGreaterThan(-1);
+    }
+    expect(headerEnd).toBeGreaterThan(headerStart);
+    expect(footerEnd).toBeGreaterThan(footerStart);
+    const header = html.slice(headerStart, headerEnd);
+    const footer = html.slice(footerStart, footerEnd);
     shell = header + footer;
     css = readdirSync(new URL("../dist/_astro/", import.meta.url))
       .filter((file) => file.endsWith(".css"))
