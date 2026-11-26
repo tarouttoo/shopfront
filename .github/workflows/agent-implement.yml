@@ -89,6 +89,29 @@ jobs:
           echo "refused=$refused" >> "$GITHUB_OUTPUT"
           echo "existing_pr_url=$existing_pr_url" >> "$GITHUB_OUTPUT"
 
+      - name: Preflight repo settings
+        # A wrong repo setting surfaces only after a full agent run, at
+        # 'Open draft PR' (issue #1, 2026-11-25: 7 minutes spent, then
+        # "GitHub Actions is not permitted to create or approve pull
+        # requests"). Check the settings the pipeline needs while it is
+        # still cheap; the fix commands land in the log the debugging
+        # agent reads.
+        if: steps.shape.outputs.route == 'implement' && steps.preflight.outputs.refused != 'true'
+        run: |
+          set -euo pipefail
+          can_approve=$(gh api "repos/${GH_REPO}/actions/permissions/workflow" --jq '.can_approve_pull_request_reviews')
+          if [ "$can_approve" != "true" ]; then
+            echo "::error::GitHub Actions cannot create pull requests on ${GH_REPO}; 'Open draft PR' would fail after a full agent run. Fix:"
+            echo "::error::gh api -X PUT repos/${GH_REPO}/actions/permissions/workflow -F can_approve_pull_request_reviews=true"
+            exit 1
+          fi
+          allow_auto_merge=$(gh api "repos/${GH_REPO}" --jq '.allow_auto_merge')
+          if [ "$allow_auto_merge" != "true" ]; then
+            echo "::error::allow_auto_merge is off; auto-merge (ADR 0011) needs it. Fix:"
+            echo "::error::gh api -X PATCH repos/${GH_REPO} -F allow_auto_merge=true"
+            exit 1
+          fi
+
       - name: Refuse existing PR
         if: steps.shape.outputs.route == 'implement' && steps.preflight.outputs.refused == 'true'
         env:
@@ -242,6 +265,14 @@ jobs:
               echo "Implemented by the Sandcastle agent workflow."
             } > "$PR_BODY_FILE"
           fi
+          # The agent drafts the body with GitHub Actions template variables
+          # it cannot resolve (evidence links — PR #2 shipped a dead
+          # $GITHUB_SERVER_URL one). Publish the run's real values instead.
+          sed -i \
+            -e "s|\$GITHUB_SERVER_URL|$GITHUB_SERVER_URL|g" \
+            -e "s|\$GITHUB_REPOSITORY|$GITHUB_REPOSITORY|g" \
+            -e "s|\$GITHUB_RUN_ID|$GITHUB_RUN_ID|g" \
+            "$PR_BODY_FILE"
           pr_url=$(gh pr create --draft --base main --head "$BRANCH" --title "$title" --body-file "$PR_BODY_FILE" | tail -n1)
           echo "pr_number=$(basename "$pr_url")" >> "$GITHUB_OUTPUT"
 
