@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { CATEGORIES, PRODUCTS, categoryLabel, findProduct } from "./catalog";
+import {
+  CATEGORIES,
+  PRODUCTS,
+  categoryLabel,
+  findProduct,
+  isPopulatedCategory,
+  populatedCategories,
+} from "./catalog";
 
 describe("catalog data contract", () => {
   it("loads every Product with a unique SKU", () => {
@@ -25,6 +32,25 @@ describe("catalog data contract", () => {
 
   it("rejects an unknown SKU", () => {
     expect(findProduct("НЕТ-ТАКОГО")).toBeUndefined();
+  });
+});
+
+/**
+ * The fact «which Categories are populated» (GLOSSARY: Наполненная
+ * Категория): derived from catalog.json here, so no island, page or
+ * loader keeps a second literal list to drift away from the data.
+ */
+describe("populated Categories", () => {
+  it("derives the populated Categories from the Catalog data alone", () => {
+    // The dataset pins put all 5818 positions into nasosy; the other
+    // three pages show the «Каталог скоро появится» empty state.
+    expect(populatedCategories()).toEqual(["nasosy"]);
+  });
+
+  it("a Category is populated exactly when the Catalog carries a Product in it", () => {
+    for (const { id } of CATEGORIES) {
+      expect(isPopulatedCategory(id)).toBe(PRODUCTS.some((p) => p.category === id));
+    }
   });
 });
 

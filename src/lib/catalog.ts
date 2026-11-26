@@ -40,6 +40,20 @@ export function categoryLabel(id: CategoryId): string {
   return found.label;
 }
 
+/**
+ * A Category is populated when the Catalog carries at least one Product
+ * in it (GLOSSARY: Наполненная Категория). Derived from catalog.json —
+ * the Catalog data is the only source of truth, so a second populated
+ * Category appears here without any island or loader edit.
+ */
+export function isPopulatedCategory(id: CategoryId): boolean {
+  return PRODUCTS.some((product) => product.category === id);
+}
+
+export function populatedCategories(): CategoryId[] {
+  return CATEGORIES.filter(({ id }) => isPopulatedCategory(id)).map(({ id }) => id);
+}
+
 function assertProduct(raw: unknown, index: number): Product {
   const where = `catalog.json[${index}]`;
   if (typeof raw !== "object" || raw === null) {

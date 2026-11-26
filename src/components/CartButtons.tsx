@@ -7,7 +7,7 @@ import {
   resolveCart,
   saveCart,
 } from "../lib/cart";
-import { fetchCategoryProducts } from "../lib/catalogClient";
+import { loadOrderableProducts } from "../lib/catalogClient";
 import type { Product } from "../lib/catalog";
 import CartModal, { type ModalLine } from "./CartModal";
 
@@ -20,10 +20,11 @@ import CartModal, { type ModalLine } from "./CartModal";
  * persisted, so the badge, a reload and the Order Request form all
  * read the same stored Cart.
  *
- * Drawer rows need Product names: the category JSON loads lazily on
- * first open (never inline in the bundle). Until it arrives a line
- * shows its SKU; the Cart holds only Catalog SKUs, and the nasosy
- * asset is the one orderable category today (Spec #4).
+ * Drawer rows need Product names: the Catalog loads lazily through
+ * the shared `loadOrderableProducts()` loader (never inline in the
+ * bundle). Until it arrives a line shows its SKU; the Cart holds only
+ * Catalog SKUs, and the loader follows the populated Categories of
+ * catalog.json — Насосы is the one orderable Category today (Spec #4).
  */
 export default function CartButtons() {
   const [cart, dispatch] = useReducer(cartReducer, EMPTY_CART, () => loadCart(localStorage));
@@ -56,7 +57,7 @@ export default function CartButtons() {
   useEffect(() => {
     if (!open || requested.current) return;
     requested.current = true;
-    fetchCategoryProducts("nasosy").then(
+    loadOrderableProducts().then(
       (products) => setCatalog(products),
       // Keep the drawer usable without names; the next open retries.
       () => {

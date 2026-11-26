@@ -1,4 +1,4 @@
-import type { CategoryId, Product } from "./catalog";
+import { type CategoryId, type Product, populatedCategories } from "./catalog";
 import { withBase } from "./urls";
 
 /**
@@ -69,11 +69,40 @@ export function parseCategoryProducts(parsed: unknown, category: CategoryId): Pr
   return parsed.map((raw, index) => assertRecord(raw, index, category));
 }
 
-/** Fetch one category's build-time JSON asset. */
-export async function fetchCategoryProducts(category: CategoryId): Promise<Product[]> {
+/** Fetch one category's build-time JSON asset (module-private: the
+ *  loader below is the only consumer — islands read the Catalog
+ *  through `loadOrderableProducts()`). */
+async function fetchCategoryProducts(category: CategoryId): Promise<Product[]> {
   const response = await fetch(withBase(`data/${category}.json`));
   if (!response.ok) {
     throw new Error(`category JSON: HTTP ${response.status}`);
   }
   return parseCategoryProducts(await response.json(), category);
+}
+
+/**
+ * Load the Products of every populated Category (GLOSSARY: Наполненная
+ * Категория; one orderable dataset today: Насосы). Per-page cache: the
+ * module memoizes the resolved promise, so the three islands share one
+ * fetch per page load — and one array instance. A duplicated island
+ * chunk may hold its own cache copy: a duplicate fetch of identical
+ * data, harmless. A rejected load is not memoized: the promise rejects
+ * and the next call fetches again, so retry semantics stay with the
+ * caller (each island keeps its own failure presentation).
+ */
+let orderable: Promise<Product[]> | null = null;
+
+export function loadOrderableProducts(): Promise<Product[]> {
+  if (!orderable) {
+    orderable = Promise.all(
+      populatedCategories().map((category) => fetchCategoryProducts(category)),
+    ).then(
+      (parts) => parts.flat(),
+      (error: unknown) => {
+        orderable = null;
+        throw error;
+      },
+    );
+  }
+  return orderable;
 }
