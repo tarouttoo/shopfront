@@ -22,8 +22,16 @@ export const fail = (message: string): never => {
   process.exit(1);
 };
 
+// capture buffer: execSync's 1 MiB default overflows on whole-PR diffs
+// (PR #12 review died twice with `spawnSync /bin/sh ENOBUFS` on a 4 MB diff)
+const MAX_CAPTURE = 64 * 1024 * 1024;
+
 export const sh = (cmd: string): string =>
-  execSync(cmd, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+  execSync(cmd, {
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+    maxBuffer: MAX_CAPTURE,
+  });
 
 export const safeSh = (cmd: string): string => {
   try {
@@ -37,6 +45,7 @@ export const gh = (args: string[]): string =>
   execFileSync("gh", args, {
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
+    maxBuffer: MAX_CAPTURE,
   });
 
 /** Append a markdown line to the workflow run's step summary. */
