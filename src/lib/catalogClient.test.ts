@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { parseCategoryProducts } from "./catalogClient";
+import { parseCategoryProducts, parsePopulatedCategories } from "./catalogClient";
 
 /**
  * The per-category JSON asset crosses an untyped boundary (fetch), so a
@@ -57,10 +57,41 @@ describe("parseCategoryProducts (client-side category JSON)", () => {
 });
 
 /**
+ * The fact asset's parse boundary: like every fetched asset, a
+ * malformed payload is a rejection, not a default — the loader must
+ * never guess which Categories are populated.
+ */
+describe("parsePopulatedCategories (client-side fact asset)", () => {
+  it("accepts known category ids, order preserved", () => {
+    expect(parsePopulatedCategories(["nasosy", "kotly"])).toEqual(["nasosy", "kotly"]);
+  });
+
+  it("rejects a non-array payload", () => {
+    expect(() => parsePopulatedCategories({ categories: ["nasosy"] })).toThrow(
+      "expected an array of category ids",
+    );
+  });
+
+  it("rejects a non-string entry", () => {
+    expect(() => parsePopulatedCategories(["nasosy", 42])).toThrow(
+      "populated-categories.json[1]: expected a category id string",
+    );
+  });
+
+  it("rejects an unknown id — the Catalog defines what exists", () => {
+    expect(() => parsePopulatedCategories(["nasosy", "nobody"])).toThrow(
+      'populated-categories.json[1]: unknown category "nobody"',
+    );
+  });
+});
+
+/**
  * loadOrderableProducts: the one orderable dataset per page load (the
- * populated Categories of catalog.json — Насосы today). fetch stays at
- * this seam and is injected through globalThis; the module-level cache
- * spans a page load, so tests re-import the module per case.
+ * populated Categories of catalog.json — Насосы today), loaded as the
+ * build-time fact asset then each per-category positions asset. fetch
+ * stays at this seam and is injected through globalThis; the
+ * module-level cache spans a page load, so tests re-import the module
+ * per case.
  */
 describe("loadOrderableProducts (one fact, one cache)", () => {
   const row = {
@@ -77,6 +108,16 @@ describe("loadOrderableProducts (one fact, one cache)", () => {
     return fetchMock;
   };
 
+  /** The build ships the fact asset, then the populated Categories' positions. */
+  const stubAssets = (fact: unknown, data: unknown) =>
+    stubFetch(async (input) => {
+      const url = String(input);
+      if (url.includes("populated-categories.json")) {
+        return { ok: true, json: async () => fact };
+      }
+      return { ok: true, json: async () => data };
+    });
+
   beforeEach(() => {
     vi.resetModules();
   });
@@ -86,44 +127,60 @@ describe("loadOrderableProducts (one fact, one cache)", () => {
   });
 
   it("loads the Products of every populated Category — and fetches no empty one", async () => {
-    const fetchMock = stubFetch(async () => ({ ok: true, json: async () => [row] }));
+    const fetchMock = stubAssets(["nasosy"], [row]);
     const { loadOrderableProducts } = await import("./catalogClient");
     await expect(loadOrderableProducts()).resolves.toEqual([row]);
-    // Only the populated Categories are requested; kotly/gorelki/
-    // avtomatika carry no Products and their empty assets stay unloaded.
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(String(fetchMock.mock.calls[0]![0])).toContain("nasosy");
+    // Two fetches: the fact asset, then the one populated Category's
+    // positions; kotly/gorelki/avtomatika carry no Products and their
+    // empty assets stay unloaded.
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(String(fetchMock.mock.calls[0]![0])).toContain("populated-categories.json");
+    expect(String(fetchMock.mock.calls[1]![0])).toContain("nasosy.json");
   });
 
-  it("memoizes the resolved promise: a second call resolves without a second fetch", async () => {
-    const fetchMock = stubFetch(async () => ({ ok: true, json: async () => [row] }));
+  it("rejects on a corrupted fact asset before fetching any positions", async () => {
+    const fetchMock = stubAssets(["nasosy", "nobody"], [row]);
+    const { loadOrderableProducts } = await import("./catalogClient");
+    await expect(loadOrderableProducts()).rejects.toThrow(
+      'populated-categories.json[1]: unknown category "nobody"',
+    );
+    // The fact is parsed first: the positions asset stays unloaded.
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("memoizes the resolved promise: a second call resolves without a second load", async () => {
+    const fetchMock = stubAssets(["nasosy"], [row]);
     const { loadOrderableProducts } = await import("./catalogClient");
     // The three islands call the loader on one page load; they share
-    // the memoized promise — one fetch, one array instance.
+    // the memoized promise — one load, one array instance.
     const [first, second, third] = await Promise.all([
       loadOrderableProducts(),
       loadOrderableProducts(),
       loadOrderableProducts(),
     ]);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2); // fact asset + positions, once
     expect(second).toBe(first);
     expect(third).toBe(first);
   });
 
   it("a rejected load is not memoized — retry semantics stay with the caller", async () => {
     let failing = true;
-    const fetchMock = stubFetch(async () => {
+    const fetchMock = stubFetch(async (input) => {
       if (failing) throw new Error("network down");
+      const url = String(input);
+      if (url.includes("populated-categories.json")) {
+        return { ok: true, json: async () => ["nasosy"] };
+      }
       return { ok: true, json: async () => [row] };
     });
     const { loadOrderableProducts } = await import("./catalogClient");
     await expect(loadOrderableProducts()).rejects.toThrow("network down");
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    // The next call fetches again (CartButtons' retry on the next
+    // The next call loads again (CartButtons' retry on the next
     // drawer open rides this; a succeeded load would not re-fetch).
     failing = false;
     await expect(loadOrderableProducts()).resolves.toEqual([row]);
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(3); // fact + positions
   });
 });
 

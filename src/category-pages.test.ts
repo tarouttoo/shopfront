@@ -89,13 +89,24 @@ describe("category pages (built static output)", () => {
 
   it("every populated Category ships its data asset for the loader", () => {
     // loadOrderableProducts() fetches exactly the populated Categories
-    // (catalog.ts derives them from catalog.json), so each one must
+    // (the fact asset derives them from catalog.json), so each one must
     // have its per-category asset in the shared build.
     for (const id of populatedCategories()) {
       const asset = readFileSync(new URL(`../dist/data/${id}.json`, import.meta.url), "utf8");
       const data = JSON.parse(asset) as unknown[];
       expect(data.length).toBeGreaterThan(0);
     }
+  });
+
+  it("ships the populated-Categories fact asset the loader reads", () => {
+    // The endpoint derives dist/data/populated-categories.json from
+    // populatedCategories() at build time; the pin holds the two
+    // descriptions of the one fact in agreement (CODING_STANDARDS:
+    // files describing one mechanism must agree).
+    const fact: unknown = JSON.parse(
+      readFileSync(new URL("../dist/data/populated-categories.json", import.meta.url), "utf8"),
+    );
+    expect(fact).toEqual(populatedCategories());
   });
 
   it("empty categories ship no product table and no toolbar", () => {
