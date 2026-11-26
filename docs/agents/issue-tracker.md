@@ -24,14 +24,18 @@ File issues only into the user's own repo. Never file into `mattpocock/skills` (
 
 - **Read a PR**: `gh pr view <number>`, then `gh pr view <number> --comments` (off a TTY, `--comments` prints only the comments, not the body), and `gh pr diff <number>` for the diff.
 - **List external PRs for triage**: `gh api --paginate 'repos/{owner}/{repo}/pulls?state=open' --jq '.[] | select(.author_association | IN("OWNER","MEMBER","COLLABORATOR") | not) | {number, title, author: .user.login, author_association, labels: [.labels[].name]}'`.
-- **Comment / label / close**: `gh pr comment`, `gh pr edit --add-label`/`--remove-label`, `gh pr close`.
+- **Comment / label / close**: `gh pr comment`, `gh pr close`. For labels,
+  `gh pr edit --add-label` fails here (GraphQL Projects-classic deprecation;
+  two sessions hit it) — use the REST API:
+  `gh api --method POST repos/<owner>/<repo>/issues/<n>/labels -f 'labels[]=…'`
+  (and `--method DELETE` with the same `-f` to remove).
 
 GitHub shares one number space across issues and PRs, so a bare `#42` may be either: resolve with `gh pr view 42` and fall back to `gh issue view 42`.
 
 ## Waiting and unblocking
 
 - **Wait for a run**: `gh run watch <run-id> --exit-status` — returns when the run concludes and exits non-zero on failure. Sleep-polling `gh run list` in a loop burns session minutes.
-- **Read a failed run**: every `agent:*` failure comment links the workflow run; `gh run view <run-id> --log-failed` prints the failing step only. The logs are the forensics — nothing else is captured.
+- **Read a failed run**: every `agent:*` failure comment links the workflow run; `gh run view <run-id> --log-failed` prints the failing step only — when it returns nothing even for a failed run (observed twice on run 45712370181), fall back to `gh run view <run-id> --job=<job-id> --log`. The logs are the forensics — nothing else is captured.
 - **Unblock a stuck PR**: the review and implement-PR workflows check out the PR's tree and run the repo's scripts from it, so a fix pushed to `main` does not reach a stuck PR — merge `main` into the PR branch and push before re-adding the workflow's label.
 
 ## When a skill says "publish to the issue tracker"
