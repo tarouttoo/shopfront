@@ -15,7 +15,8 @@ jobs:
   # group made all four workflows unparseable), so a shell step reduces
   # the unit number mod 3 and the heavy job's concurrency group reads it
   # through `needs`. `||` covers both event shapes in one expression;
-  # a numberless event falls back to shard 0.
+  # a numberless event aborts the shard job instead of silently
+  # queuing every run into shard 0.
   shard:
     if: github.event.label.name == 'agent:review'
     runs-on: ubuntu-latest
@@ -26,7 +27,10 @@ jobs:
       - id: mod
         run: |
           N="${{ github.event.issue.number || github.event.pull_request.number }}"
-          echo "n=$(( ${N:-0} % 3 ))" >> "$GITHUB_OUTPUT"
+          # A labeled event always carries the unit number (ADR 0025); an
+          # empty one is event-shape drift — reject, never guess shard 0.
+          : "${N:?event carried no issue/PR number — cannot compute the shard}"
+          echo "n=$(( N % 3 ))" >> "$GITHUB_OUTPUT"
 
   review:
     needs: shard

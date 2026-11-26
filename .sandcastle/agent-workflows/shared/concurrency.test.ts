@@ -47,6 +47,9 @@ describe("agent workflow concurrency shards (ADR 0025)", () => {
       const mod = workflowOf(file).jobs.shard?.steps?.find((s) => s.id === "mod");
       expect(mod?.run).toContain("% 3");
       expect(mod?.run).toContain("GITHUB_OUTPUT");
+      // No shard-0 default for a numberless event: a required key's
+      // absence at an untyped boundary is a rejection, not a default.
+      expect(mod?.run).toContain("${N:?");
     });
 
     it(`${file} queues its agent job in repo-wide shard agent-llm-<shard>, never cancelling`, () => {

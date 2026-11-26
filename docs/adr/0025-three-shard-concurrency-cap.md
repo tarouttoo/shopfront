@@ -21,7 +21,7 @@ concurrent agent runs at 3 while keeping same-PR runs serialized.
   four workflow files, and every agent run for them vanished without a
   run or a comment. So the shard is computed where arithmetic is legal
   — a tiny `shard` job in each workflow reduces the unit number mod 3
-  in shell (`$((n % 3))`) and exports it, and the heavy job's
+  in shell (`$(( N % 3 ))`) and exports it, and the heavy job's
   job-level concurrency group reads it through the `needs` context:
   `agent-llm-${{ needs.shard.outputs.n }}`. All four share the
   `agent-llm-` prefix, so the shard namespaces are one pool: an issue
@@ -42,7 +42,9 @@ concurrent agent runs at 3 while keeping same-PR runs serialized.
   only a run arriving on a shard already 1 running + 100 deep is lost.
 - **No `github.run_id` fallback is needed here.** All four workflows
   fire only on `labeled` events (issues / pull_request /
-  pull_request_target), which always carry the unit number. Workflows
+  pull_request_target), which always carry the unit number — and the
+  shard step aborts the run if one ever doesn't, rather than silently
+  defaulting to shard 0. Workflows
   that can fire numberless (agent-explore's `workflow_dispatch`) keep
   their existing fallback.
 - **The wave planner and the shards now agree.** `to-tickets` already
