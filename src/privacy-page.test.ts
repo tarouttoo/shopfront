@@ -68,6 +68,19 @@ describe("privacy page (built static output)", () => {
     expect(html).not.toMatch(/заказ/i);
   });
 
+  it("ships the approved §4.2 wording with the Web3Forms claim stripped", () => {
+    // The director-approved sentence verbatim (#4 comment 7185335102):
+    // HTTPS transmission only. When Order Request intake lands the §4.2
+    // wording is re-validated (promised on #4) — update this pin with
+    // the new approval, never silently.
+    expect(html).toContain(
+      "4.2. Данные из формы передаются Оператору по защищенному протоколу (HTTPS).",
+    );
+    // Spec decision 2 / ADR 0021: no Web3Forms submitter ships anywhere,
+    // so the policy must not claim one (no «на почту», no service name).
+    expect(html).not.toMatch(/web3forms|на почту/i);
+  });
+
   it("renders inside the approved base frame with the shared scroll-top button", () => {
     expect(html).toContain(`tel:${SITE.phones[0].tel}`);
     expect(html).toContain(SITE.copyright);
