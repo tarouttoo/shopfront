@@ -22,7 +22,11 @@ type Workflow = {
     {
       needs?: string | string[];
       steps?: { id?: string; run?: string }[];
-      concurrency?: { group?: string; "cancel-in-progress"?: boolean };
+      concurrency?: {
+        group?: string;
+        "cancel-in-progress"?: boolean;
+        queue?: string;
+      };
     }
   >;
 };
@@ -51,8 +55,11 @@ describe("agent workflow concurrency shards (ADR 0025)", () => {
       const concurrency = heavy?.concurrency;
       expect(concurrency?.group).toBe("agent-llm-${{ needs.shard.outputs.n }}");
       // Queue, never cancel: a queued run is a later slot, a cancelled
-      // one is a lost run.
+      // one is a lost run. cancel-in-progress: false alone leaves the
+      // default single-pending behavior (a newer queued run cancels the
+      // pending one and takes its place), so queue: max is pinned too.
       expect(concurrency?.["cancel-in-progress"]).toBe(false);
+      expect(concurrency?.queue).toBe("max");
     });
   }
 

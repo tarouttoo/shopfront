@@ -40,6 +40,10 @@ jobs:
       # a shard and queue.
       group: agent-llm-${{ needs.shard.outputs.n }}
       cancel-in-progress: false
+      # queue: max (not the default single): by default GitHub keeps one
+      # run pending per group and a newer queued run cancels it — a lost
+      # run even with cancel-in-progress: false.
+      queue: max
     permissions:
       contents: write
       pull-requests: write

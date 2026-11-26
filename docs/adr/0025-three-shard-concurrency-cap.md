@@ -35,7 +35,11 @@ concurrent agent runs at 3 while keeping same-PR runs serialized.
 - **Queue, never cancel.** `cancel-in-progress` stays `false`
   everywhere: a queued run is a later slot, a cancelled one is a lost
   run that would leave its issue `agent:in-progress` and its branch
-  unpushed.
+  unpushed. `cancel-in-progress: false` alone does not buy this: by
+  default GitHub keeps at most one run *pending* per group, and a newer
+  queued run cancels that pending run and takes its place. So every
+  sharded group also sets `queue: max` (up to 100 pending per shard);
+  only a run arriving on a shard already 1 running + 100 deep is lost.
 - **No `github.run_id` fallback is needed here.** All four workflows
   fire only on `labeled` events (issues / pull_request /
   pull_request_target), which always carry the unit number. Workflows
