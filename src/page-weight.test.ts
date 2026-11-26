@@ -89,7 +89,7 @@ describe("page-weight budget (built static output)", () => {
   it("reports page sizes so weight stays visible", () => {
     // The retro's finding was invisibility: print the table every run
     // so growth toward the ceiling shows up in CI logs, not in review.
-    const report = pages
+    const report = [...pages]
       .sort((a, b) => b.bytes - a.bytes)
       .map(({ route, bytes }) => `  ${(bytes / 1024).toFixed(1).padStart(7)} KB  ${route}`)
       .join("\n");
