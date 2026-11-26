@@ -170,6 +170,13 @@ jobs:
           PR_BODY_FILE: ${{ runner.temp }}/pr-body.md
         run: |
           if [ -s "$PR_BODY_FILE" ]; then
+            # Same substitution as Agent Implement's "Open draft PR": the
+            # agent drafts $GITHUB_* template variables it cannot resolve.
+            sed -i \
+              -e "s|\$GITHUB_SERVER_URL|$GITHUB_SERVER_URL|g" \
+              -e "s|\$GITHUB_REPOSITORY|$GITHUB_REPOSITORY|g" \
+              -e "s|\$GITHUB_RUN_ID|$GITHUB_RUN_ID|g" \
+              "$PR_BODY_FILE"
             gh pr edit "$PR_NUMBER" --body-file "$PR_BODY_FILE"
           fi
 
