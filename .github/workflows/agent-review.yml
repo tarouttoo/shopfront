@@ -10,7 +10,26 @@ on:
     types: [labeled]
 
 jobs:
+  # ADR 0025's shard key, computed where arithmetic is legal: GitHub
+  # expressions have no `%` operator (a literal `% 3` in the concurrency
+  # group made all four workflows unparseable), so a shell step reduces
+  # the unit number mod 3 and the heavy job's concurrency group reads it
+  # through `needs`. `||` covers both event shapes in one expression;
+  # a numberless event falls back to shard 0.
+  shard:
+    if: github.event.label.name == 'agent:review'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      n: ${{ steps.mod.outputs.n }}
+    steps:
+      - id: mod
+        run: |
+          N="${{ github.event.issue.number || github.event.pull_request.number }}"
+          echo "n=$(( ${N:-0} % 3 ))" >> "$GITHUB_OUTPUT"
+
   review:
+    needs: shard
     if: github.event.label.name == 'agent:review'
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -19,7 +38,7 @@ jobs:
       # PR number is the shard key, so same-PR mutation stays serialized
       # (the old agent-mutate-pr-<N> guarantee) while different PRs share
       # a shard and queue.
-      group: agent-llm-${{ github.event.pull_request.number % 3 }}
+      group: agent-llm-${{ needs.shard.outputs.n }}
       cancel-in-progress: false
     permissions:
       contents: write

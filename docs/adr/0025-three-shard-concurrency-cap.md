@@ -9,15 +9,21 @@ heavy fan-out unbounded: `agent-implement` grouped per issue
 (`agent-mutate-pr-<N>`), so different Tickets and PRs ran in parallel
 without bound — the Spec #4 wave ran 4 implement runs plus stacked
 reviews, past the limit. Only explore/improve/merge serialized
-repo-wide. Ticket-driven agent workflows now key their concurrency group
-as `agent-llm-<unit % 3>`, capping repo-wide concurrent agent runs at 3
-while keeping same-PR runs serialized.
+repo-wide. Ticket-driven agent workflows now queue in three repo-wide
+`agent-llm-` shards keyed by the unit number mod 3, capping repo-wide
+concurrent agent runs at 3 while keeping same-PR runs serialized.
 
 ## Design
 
-- **Three shards, keyed by the unit number.** `agent-implement.yml`
-  groups on `github.event.issue.number % 3`; the three PR workflows
-  group on `github.event.pull_request.number % 3`. All four share the
+- **Three shards, keyed by the unit number.** GitHub expressions have
+  no arithmetic: the first cut of this ADR wrote `% 3` inside the
+  concurrency group expression, GitHub silently refused to parse all
+  four workflow files, and every agent run for them vanished without a
+  run or a comment. So the shard is computed where arithmetic is legal
+  — a tiny `shard` job in each workflow reduces the unit number mod 3
+  in shell (`$((n % 3))`) and exports it, and the heavy job's
+  job-level concurrency group reads it through the `needs` context:
+  `agent-llm-${{ needs.shard.outputs.n }}`. All four share the
   `agent-llm-` prefix, so the shard namespaces are one pool: an issue
   implement on shard 0 queues behind a PR review on shard 0, and the
   repo-wide total of concurrent agent runs never exceeds 3.
@@ -62,6 +68,6 @@ dying at the provider. The cost is head-of-line blocking: a same-shard
 run for an unrelated unit delays a run behind it, so an issue number can
 wait on a PR it has nothing to do with — accepted, because the
 alternative was runs failing outright at start. To re-tune the cap,
-change the modulus in the four YAMLs and the `AGENT_CONCURRENCY` value
+change the modulus in the four shard steps and the `AGENT_CONCURRENCY` value
 together; the contract test (`.sandcastle/agent-workflows/shared/concurrency.test.ts`)
 pins the expressions so the two cannot drift silently.
