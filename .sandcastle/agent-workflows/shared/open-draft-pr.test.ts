@@ -6,17 +6,25 @@ import { join } from "node:path";
 import { parse } from "yaml";
 import { describe, expect, it } from "vitest";
 
-const WORKFLOW_PATH = new URL(
+const IMPLEMENT_WORKFLOW_PATH = new URL(
   "../../../.github/workflows/agent-implement.yml",
+  import.meta.url,
+);
+const IMPLEMENT_PR_WORKFLOW_PATH = new URL(
+  "../../../.github/workflows/agent-implement-pr.yml",
   import.meta.url,
 );
 
 const OPEN_DRAFT_PR_STEP = "Open draft PR";
 const PREFLIGHT_STEP = "Preflight repo settings";
+const UPDATE_PR_BODY_STEP = "Update PR body";
 
 /** The run script of a named step, exactly as GitHub Actions would execute it. */
-const runScriptOf = (stepName: string): string => {
-  const workflow = parse(readFileSync(WORKFLOW_PATH, "utf8")) as {
+const runScriptOf = (
+  stepName: string,
+  workflowPath: URL = IMPLEMENT_WORKFLOW_PATH,
+): string => {
+  const workflow = parse(readFileSync(workflowPath, "utf8")) as {
     jobs: Record<string, { steps: { name?: string; run?: string }[] }>;
   };
   const step = Object.values(workflow.jobs)
@@ -67,6 +75,8 @@ const runStep = async (
           PATH: `${stubBin}:${process.env.PATH}`,
           ISSUE_NUMBER: "11",
           ISSUE_TITLE: "Some issue title",
+          // Used by agent-implement-pr.yml steps ("Update PR body").
+          PR_NUMBER: "42",
           BRANCH: "agent/issue-11-some-issue-title",
           PR_BODY_FILE: prBodyFile,
           GITHUB_OUTPUT: githubOutput,
@@ -89,6 +99,26 @@ const runStep = async (
     await rm(dir, { recursive: true, force: true });
   }
 };
+
+/**
+ * A `gh` stub for `pr create`/`pr edit` that echoes the Evidence line of the
+ * --body-file it receives to stderr, so a test can assert what reached gh.
+ * `create` additionally prints the PR URL the step parses into pr_number.
+ */
+const stubEchoingBodyFile = (subcommand: "create" | "edit"): string => `
+  if [ "$1" = pr ] && [ "$2" = ${subcommand} ]; then
+    prev=""
+    for a in "$@"; do
+      if [ "$prev" = "--body-file" ]; then grep "Evidence:" "$a" >&2; fi
+      prev="$a"
+    done
+    if [ "${subcommand}" = create ]; then
+      echo "https://github.com/octo/repo/pull/42"
+    fi
+    exit 0
+  fi
+  exit 1
+`;
 
 describe("Open draft PR step", () => {
   it("fails when gh pr create fails", async () => {
@@ -125,18 +155,7 @@ describe("Open draft PR step", () => {
     // resolve; PR #2 shipped a dead one. The step must publish real values.
     const result = await runStep(
       runScriptOf(OPEN_DRAFT_PR_STEP),
-      `
-        if [ "$1" = pr ] && [ "$2" = create ]; then
-          prev=""
-          for a in "$@"; do
-            if [ "$prev" = "--body-file" ]; then grep "Evidence:" "$a" >&2; fi
-            prev="$a"
-          done
-          echo "https://github.com/octo/repo/pull/42"
-          exit 0
-        fi
-        exit 1
-      `,
+      stubEchoingBodyFile("create"),
       {
         prBody:
           "Evidence: [workflow run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)",
@@ -184,5 +203,36 @@ describe("Preflight repo settings step", () => {
     );
     expect(result.status).not.toBe(0);
     expect(result.stdout).toContain("allow_auto_merge=true");
+  });
+});
+
+describe("Update PR body step (agent-implement-pr.yml)", () => {
+  it("substitutes GitHub template variables in the agent-drafted body", async () => {
+    // Same contract as Open draft PR: both body-posting steps must publish
+    // the run's real values (PR #2 shipped a dead template link).
+    const result = await runStep(
+      runScriptOf(UPDATE_PR_BODY_STEP, IMPLEMENT_PR_WORKFLOW_PATH),
+      stubEchoingBodyFile("edit"),
+      {
+        prBody:
+          "Evidence: [workflow run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)",
+      },
+    );
+    expect(result.status).toBe(0);
+    expect(result.stderr).toContain(
+      "https://github.com/octo/repo/actions/runs/12345",
+    );
+    expect(result.stderr).not.toContain("$GITHUB_SERVER_URL");
+  });
+
+  it("does not call gh when the agent wrote no body", async () => {
+    // The -s guard keeps an absent body from reaching gh pr edit; the stub
+    // exits 1 on any call, so a nonzero status would mean the call happened.
+    const result = await runStep(
+      runScriptOf(UPDATE_PR_BODY_STEP, IMPLEMENT_PR_WORKFLOW_PATH),
+      "exit 1\n",
+      { prBody: "" },
+    );
+    expect(result.status).toBe(0);
   });
 });
