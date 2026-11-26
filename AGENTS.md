@@ -18,6 +18,9 @@ agents edit both the product and the factory.
 - **Code style** — `.sandcastle/CODING_STANDARDS.md` holds the judgment
   rules the review pass applies; grow it only through Retro harvests
   (`docs/agents/retro.md`), never by casual edits.
+- **Testing or evidence questions** — read `docs/agents/evidence.md`
+  (content pins through the prerendered HTML, behavior pins through
+  modules; no screenshot script in a static build).
 - **Skill conventions** (triage labels, issue-tracker commands,
   domain-doc layout) — read `docs/agents/`; the triage-repro skill lives
   under `.agents/skills/triage-repro/`.

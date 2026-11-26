@@ -33,3 +33,8 @@ not here.
   Order Request; not rendered by the site.
 - **Price on request (Цена по запросу)** — the only price wording the
   Shopfront uses; never a number, never «купить».
+
+## Typography
+
+Russian UI text quotes with «…». Inside an outer «…» quote the inner
+quote uses „…“ — never a second « (pinned by `src/typography.test.ts`).

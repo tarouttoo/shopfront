@@ -37,6 +37,15 @@ fallback` there is the exact `?? 0`-shape this rule bans (retro
 2026-11-25 — a drifted `blockedBy` key silently dropped a Spec's
 blocking edges, Spec #59).
 
+## Positional assertions start with presence assertions
+
+An ordering or containment check that compares two `indexOf` results
+asserts both markers exist before comparing. Compared raw, the check
+passes vacuously once a marker vanishes — the comparison silently
+degrades from "order" to "both -1" (retro 2026-11-25 — PR #2's
+form-before-FAQ ordering assertion survived deleting the form heading;
+fixed by the review pass in `7624e5b`).
+
 ## Small honest duplication over coupling
 
 Extract a shared helper across modules only when the code is pure and

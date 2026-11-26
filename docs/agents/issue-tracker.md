@@ -28,6 +28,12 @@ File issues only into the user's own repo. Never file into `mattpocock/skills` (
 
 GitHub shares one number space across issues and PRs, so a bare `#42` may be either: resolve with `gh pr view 42` and fall back to `gh issue view 42`.
 
+## Waiting and unblocking
+
+- **Wait for a run**: `gh run watch <run-id> --exit-status` — returns when the run concludes and exits non-zero on failure. Sleep-polling `gh run list` in a loop burns session minutes.
+- **Read a failed run**: every `agent:*` failure comment links the workflow run; `gh run view <run-id> --log-failed` prints the failing step only. The logs are the forensics — nothing else is captured.
+- **Unblock a stuck PR**: the review and implement-PR workflows check out the PR's tree and run the repo's scripts from it, so a fix pushed to `main` does not reach a stuck PR — merge `main` into the PR branch and push before re-adding the workflow's label.
+
 ## When a skill says "publish to the issue tracker"
 
 Create a GitHub issue.
