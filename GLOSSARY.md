@@ -12,6 +12,11 @@ not here.
   rendered at build time from data (ADR `0021`).
 - **Category (Категория)** — a named grouping of Products; the Catalog
   has one page per Category (Насосы, Котлы, Горелки, Автоматика).
+- **Populated Category (Наполненная Категория)** — a Category carrying
+  at least one Product in the Catalog: its page renders the product
+  table, the rest show the «Каталог скоро появится» empty state. Whether
+  a Category is populated follows from the Catalog data alone.
+  _Avoid_: «orderable category» — заказывают Товары, не Категории.
 - **Services (Услуги)** — the works the Client performs
   (проектирование, монтаж и ПНР, автоматизация, сервис): content pages,
   never Products and never orderable. «Решения под ключ» is only the
