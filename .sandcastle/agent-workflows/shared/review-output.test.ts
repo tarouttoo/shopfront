@@ -75,10 +75,14 @@ describe("reviewOutputSchema holds_merge", () => {
 
 describe("review.ts → merge gate verdict chain", () => {
   // The flag has three hops: the schema parses it (above), review.ts
-  // writes it as the gate's verdict.json, and the gate reads it. The two
-  // file-side hops are pinned in source: a rename on either side breaks
-  // the chain silently, and neither hop runs in CI (the gate is bash in
-  // the workflow; review.ts's success path needs a live agent run).
+  // writes it as the gate's verdict.json, and the gate reads it. Only
+  // the middle hop is pinned here in source: review.ts's success path
+  // needs a live agent run, so a rename on that side would break the
+  // chain silently. The gate's read side is behavior-tested against its
+  // real bash in open-draft-pr.test.ts (the same filename injected on
+  // both sides); the review.ts → workflow HOLD filename handshake stays
+  // prose-pinned (ADR 0023), and drift there defaults to always-hold —
+  // the conservative side.
   it("review.ts writes verdict.json with holds_merge from the output", () => {
     const source = readFileSync(
       path.join(import.meta.dirname, "../review/review.ts"),
