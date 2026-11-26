@@ -1,5 +1,4 @@
-import type { CartLine } from "../lib/cart";
-import type { Product } from "../lib/catalog";
+import type { ResolvedCartLine } from "../lib/cart";
 import { withBase } from "../lib/urls";
 
 /**
@@ -14,15 +13,13 @@ import { withBase } from "../lib/urls";
  * dispatch into the cart reducer).
  *
  * A line not yet resolved against the Catalog (the JSON loads lazily on
- * first open) displays its SKU — the only fact known without the data.
+ * first open) displays its SKU — the only fact known without the data
+ * (`resolveCartLines(cart, null)` passes it through with
+ * `product: null`).
  */
-export interface ModalLine extends CartLine {
-  product: Product | null;
-}
-
 interface Props {
   open: boolean;
-  lines: ModalLine[];
+  lines: ResolvedCartLine[];
   onClose: () => void;
   onSetQty: (sku: string, qty: number) => void;
   onRemove: (sku: string) => void;

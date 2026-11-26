@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Product } from "../lib/catalog";
-import { fetchCategoryProducts } from "../lib/catalogClient";
+import type { CategoryId } from "../lib/categories";
+import { loadOrderableProducts } from "../lib/catalogClient";
+import { getCartStore } from "../lib/cartStore";
 import {
   MODELS_PAGE_SIZE,
   PUMP_TYPE_OPTIONS,
@@ -74,15 +76,26 @@ function Pager({
  * `reference/project-B/nasosy.html` catalog as a React island —
  * toolbar (type select, search «Поиск по серии, модели, артикулу…»,
  * sort), series cards with pagination, and a per-series models table
- * with «В корзину» actions. Position data loads client-side from the
- * build-time per-category asset (5818 positions never enter the page
- * bundle); search, filters and pagination run fully client-side.
+ * with «В корзину» actions. Position data loads client-side through
+ * `loadOrderableProducts()` (the populated Categories' positions, 5818
+ * today, never in the page bundle) and is filtered to the `category`
+ * param — islands receive params — so the table renders exactly its
+ * page's Category even as more Categories become populated; search,
+ * filters and pagination run fully client-side.
  *
- * The «В корзину» buttons carry `data-add-sku`: the header Cart island
- * (CartButtons) delegates the clicks into the cart reducer and opens
- * the drawer — one cart owner per page, as in T1.
+ * The «В корзину» buttons publish to the singleton Cart store — a typed
+ * `dispatch({ type: "add", sku })`, the store's one write path (ADR
+ * 0027). The island stays publish-only: it holds no store listener, so
+ * Cart changes never re-render the 5818-position table; the header
+ * Cart island opens the drawer on the change.
  */
-export default function ProductTable() {
+interface Props {
+  /** The page's Category (islands receive params): the table renders its positions only. */
+  category: CategoryId;
+}
+
+export default function ProductTable({ category }: Props) {
+  const store = getCartStore();
   const [load, setLoad] = useState<LoadState>({ phase: "loading" });
   const [type, setType] = useState<PumpTypeFilter>("all");
   const [query, setQuery] = useState("");
@@ -100,9 +113,11 @@ export default function ProductTable() {
 
   useEffect(() => {
     let cancelled = false;
-    fetchCategoryProducts("nasosy").then(
-      (products) => {
-        if (!cancelled) setLoad({ phase: "ready", products });
+    loadOrderableProducts().then(
+      (orderable) => {
+        if (!cancelled) {
+          setLoad({ phase: "ready", products: orderable.filter((p) => p.category === category) });
+        }
       },
       () => {
         if (!cancelled) setLoad({ phase: "error" });
@@ -242,7 +257,7 @@ export default function ProductTable() {
                     <div className="flex items-center justify-center px-3.5 py-3">
                       <button
                         type="button"
-                        data-add-sku={product.sku}
+                        onClick={() => store.dispatch({ type: "add", sku: product.sku })}
                         className="cursor-pointer rounded-btn border-none bg-primary px-3 py-2 text-[13px] font-semibold whitespace-nowrap text-white hover:bg-primary-dark"
                       >
                         В корзину
@@ -362,7 +377,7 @@ export default function ProductTable() {
                     {single ? (
                       <button
                         type="button"
-                        data-add-sku={first.sku}
+                        onClick={() => store.dispatch({ type: "add", sku: first.sku })}
                         className="mt-2.5 flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-btn border-none bg-primary px-3.5 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark"
                       >
                         В корзину

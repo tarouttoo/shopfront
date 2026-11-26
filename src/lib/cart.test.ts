@@ -9,6 +9,7 @@ import {
   loadCart,
   removeFromCart,
   resolveCart,
+  resolveCartLines,
   saveCart,
   setQty,
 } from "./cart";
@@ -85,6 +86,33 @@ describe("resolveCart", () => {
     const resolved = resolveCart(cart, PRODUCTS);
     expect(resolved.map((line) => line.sku)).toEqual(["1"]);
     expect(resolved[0]?.product.name).toBe("BM 1-2A A-D-E-HQQE");
+  });
+});
+
+describe("resolveCartLines", () => {
+  it("with products === null passes every line through with product: null", () => {
+    const cart: Cart = {
+      lines: [
+        { sku: "1", qty: 2 },
+        { sku: "УСТАРЕВШИЙ", qty: 1 },
+      ],
+    };
+    expect(resolveCartLines(cart, null)).toEqual([
+      { sku: "1", qty: 2, product: null },
+      { sku: "УСТАРЕВШИЙ", qty: 1, product: null },
+    ]);
+  });
+
+  it("with the Catalog keeps the resolveCart semantics: stale SKUs are dropped", () => {
+    const cart: Cart = {
+      lines: [
+        { sku: "1", qty: 2 },
+        { sku: "УСТАРЕВШИЙ", qty: 1 },
+      ],
+    };
+    const resolved = resolveCartLines(cart, PRODUCTS);
+    expect(resolved.map((line) => line.sku)).toEqual(["1"]);
+    expect(resolved[0]?.product?.name).toBe("BM 1-2A A-D-E-HQQE");
   });
 });
 

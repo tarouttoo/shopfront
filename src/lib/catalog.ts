@@ -1,9 +1,17 @@
 import catalogJson from "../data/catalog.json";
+import { CATEGORIES, type CategoryId } from "./categories";
 
 /**
  * The Catalog data contract (ADR 0021): build-time JSON, rendered into
  * static HTML. A required key's absence is a rejection, not a default —
  * a broken catalog must fail the build, not silently render empty cards.
+ *
+ * This module carries the payload (all positions), so client modules
+ * must not import it at runtime: the Category facts they need (ids and
+ * labels) live in categories.ts, and the one derived fact they read —
+ * which Categories are populated — ships as the build-time
+ * `data/populated-categories.json` asset. Re-exports keep the public
+ * surface of this module unchanged for the build-side consumers.
  */
 
 export interface Spec {
@@ -19,25 +27,25 @@ export interface Product {
   specs: Spec[];
 }
 
+export { CATEGORIES, categoryLabel } from "./categories";
+export type { CategoryId } from "./categories";
+
 /**
- * The four GLOSSARY categories, one page per Category (Насосы, Котлы,
- * Горелки, Автоматика). Only Насосы carries Products so far (Spec #4:
- * the approved automatika position is junk and stays out) — the empty
- * categories exist so their pages and filters resolve.
+ * A Category is populated when the Catalog carries at least one Product
+ * in it (GLOSSARY: Наполненная Категория). Derived from catalog.json —
+ * the Catalog data is the only source of truth, so a second populated
+ * Category appears here without any island or loader edit. The fact
+ * crosses to the client as the build-time
+ * `data/populated-categories.json` asset (the endpoint derives it from
+ * these same functions); this module's payload never enters the page
+ * bundles.
  */
-export type CategoryId = "nasosy" | "kotly" | "gorelki" | "avtomatika";
+export function isPopulatedCategory(id: CategoryId): boolean {
+  return PRODUCTS.some((product) => product.category === id);
+}
 
-export const CATEGORIES: ReadonlyArray<{ id: CategoryId; label: string }> = [
-  { id: "nasosy", label: "Насосы" },
-  { id: "kotly", label: "Котлы" },
-  { id: "gorelki", label: "Горелки" },
-  { id: "avtomatika", label: "Автоматика" },
-];
-
-export function categoryLabel(id: CategoryId): string {
-  const found = CATEGORIES.find((c) => c.id === id);
-  if (!found) throw new Error(`catalog.json: unknown category "${id}"`);
-  return found.label;
+export function populatedCategories(): CategoryId[] {
+  return CATEGORIES.filter(({ id }) => isPopulatedCategory(id)).map(({ id }) => id);
 }
 
 function assertProduct(raw: unknown, index: number): Product {
