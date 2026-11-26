@@ -1,2 +1,6 @@
+# Public and indexable since ADR 0022 lifted ADR 0020/0021's
+# until-approval gate: crawl everything.
 User-agent: *
-Disallow: /
+Allow: /
+
+Sitemap: https://tarouttoo.github.io/shopfront/sitemap-index.xml

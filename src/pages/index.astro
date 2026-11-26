@@ -1,61 +1,448 @@
 ---
 import Base from "../layouts/Base.astro";
+import { SITE } from "../data/site";
 import { withBase } from "../lib/urls";
 
-const steps = [
+/**
+ * The landing (Spec #4, T2): a faithful port of the approved variant 1
+ * (`reference/project-B/index.html`) — hero with count-up stats, the
+ * four direction cards, the About block and the Contacts block with the
+ * Yandex map, in the source order with the source visuals expressed as
+ * Tailwind utilities (T1 tokens). Identity values are read from
+ * site.ts, never hardcoded. The source's Web3Forms submitter is
+ * replaced by a local stub (Spec decision 2, ADR 0021 — intake is
+ * wayfinder territory): validation and the approved success message
+ * only. The source page carried two overlapping scroll-top buttons
+ * (the second wired by cart-order.js); the port keeps one.
+ */
+
+const title = `${SITE.name} — Теплоэнергетика и инженерные системы`;
+
+// Direction cards: the approved labels and copy; the routes per Spec §5
+// («Решения под ключ» survives only as the approved label for Services).
+const DIRECTIONS = [
   {
-    title: "Выберите позиции",
-    text: "Каталог с характеристиками — соберите нужное в корзину.",
+    num: "01",
+    label: "Насосы",
+    text: "Истратех и другое насосное оборудование. Подбор и поставка.",
+    href: withBase("nasosy/"),
   },
   {
-    title: "Оформите заявку",
-    text: "Одна форма: контакты и состав заявки. Без регистрации.",
+    num: "02",
+    label: "Автоматика",
+    text: "ОВЕН, ПЛК, КИПиА. Производство НКУ и шкафов управления.",
+    href: withBase("avtomatika/"),
   },
   {
-    title: "Получите счёт",
-    text: "Мы отвечаем по заявке и выставляем счёт или КП. Оплата после согласования.",
+    num: "03",
+    label: "Котлы и горелки",
+    text: "Отопительное оборудование для котельных и ИТП.",
+    href: withBase("kotly/"),
+  },
+  {
+    num: "04",
+    label: "Решения под ключ",
+    text: "Проектирование, монтаж, ПНР, сервис. Полный цикл работ.",
+    href: withBase("services/"),
   },
 ];
+
+const KEY_DIRECTIONS = [
+  "Модернизация существующих объектов",
+  "Наладка и пусконаладочные работы (ПНР)",
+  "Ремонтно-наладочные испытания",
+  "Автоматизация котельных и ИТП",
+  "Внедрение систем диспетчеризации",
+];
+
+const [phoneMain, phoneSecond] = SITE.phones;
 ---
 
-<Base title="Витрина — каталог оборудования">
-  <section class="mx-auto max-w-5xl px-4 pt-16 pb-12 text-center">
-    <p class="text-sm font-medium tracking-wide text-indigo-600 uppercase">Каталог оборудования</p>
-    <h1 class="mt-3 text-4xl font-bold tracking-tight">Оборудование и щиты — цены по запросу</h1>
-    <p class="mx-auto mt-4 max-w-2xl text-slate-600">
-      B2B-витрина: характеристики по каждой позиции, корзина собирает заявку, счёт — в один
-      клик. Без розничной корзины и онлайн-оплаты — как принято в B2B.
-    </p>
-    <div class="mt-8 flex items-center justify-center gap-3">
-      <a
-        href={withBase("catalog/")}
-        class="rounded-md bg-indigo-600 px-6 py-3 text-sm font-medium text-white hover:bg-indigo-500"
+<Base title={title}>
+  <!-- HERO -->
+  <section class="relative overflow-hidden bg-primary pt-[70px] pb-[50px] text-white">
+    <div
+      class="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(13,71,161,0.94)_0%,rgba(21,101,192,0.85)_55%,rgba(0,131,143,0.9)_100%)]"
+    >
+    </div>
+    <div
+      class="relative z-[2] mx-auto grid max-w-[1240px] grid-cols-1 items-center gap-10 px-5 min-[900px]:grid-cols-[1.2fr_0.9fr]"
+    >
+      <div class="text-left max-[900px]:text-center">
+        <h1
+          class="mb-[18px] text-[2.6rem] font-extrabold leading-[1.15] [text-shadow:0_2px_12px_rgba(0,0,0,0.2)] max-md:text-[2rem]"
+        >
+          Инженерные решения для теплоэнергетики
+        </h1>
+        <p
+          class="mb-7 max-w-[520px] text-[1.08rem] leading-[1.6] opacity-[0.94] max-[900px]:mx-auto"
+        >
+          Поставка оборудования, производство НКУ, проектирование, монтаж, пусконаладка и
+          сервис. Работаем с Истратех, ОВЕН и другими производителями.
+        </p>
+        <a
+          href="#contacts"
+          class="inline-flex items-center justify-center gap-2 rounded-btn bg-accent px-[22px] py-3 text-[15px] font-semibold whitespace-nowrap text-white transition-all duration-[250ms] hover:-translate-y-px hover:bg-accent-dark"
+        >
+          Получить консультацию
+        </a>
+      </div>
+      <div
+        class="grid grid-cols-2 gap-3.5 max-[900px]:mx-auto max-[900px]:mt-6 max-[900px]:max-w-[340px]"
       >
-        Открыть каталог
-      </a>
-      <a
-        href={withBase("order/")}
-        class="rounded-md border border-slate-300 bg-white px-6 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
-      >
-        Моя заявка
-      </a>
+        <div class="stat-card rounded-card border border-white/20 bg-white/[0.14] px-4 py-[22px] text-center">
+          <span class="number block text-[1.75rem] font-extrabold text-white" data-target="19"
+            >0</span
+          >
+          <span class="mt-1.5 block text-[0.82rem] text-white/90">лет на рынке</span>
+        </div>
+        <div class="stat-card rounded-card border border-white/20 bg-white/[0.14] px-4 py-[22px] text-center">
+          <span class="number block text-[1.75rem] font-extrabold text-white" data-target="2007"
+            >0</span
+          >
+          <span class="mt-1.5 block text-[0.82rem] text-white/90">год основания</span>
+        </div>
+        <div class="stat-card rounded-card border border-white/20 bg-white/[0.14] px-4 py-[22px] text-center">
+          <span class="block text-[1.75rem] font-extrabold text-white">100%</span>
+          <span class="mt-1.5 block text-[0.82rem] text-white/90">российский фокус</span>
+        </div>
+        <div class="stat-card rounded-card border border-white/20 bg-white/[0.14] px-4 py-[22px] text-center">
+          <span class="block text-[1.75rem] font-extrabold text-white">СРО</span>
+          <span class="mt-1.5 block text-[0.82rem] text-white/90">два допуска</span>
+        </div>
+      </div>
     </div>
   </section>
 
-  <section class="mx-auto max-w-5xl px-4 pb-20">
-    <h2 class="text-center text-2xl font-semibold">Как заказать</h2>
-    <div class="mt-8 grid gap-6 sm:grid-cols-3">
+  <!-- DIRECTIONS -->
+  <div class="relative z-10 mx-auto -mt-10 max-w-[1240px] px-5 pb-2.5">
+    <div class="grid grid-cols-4 gap-[18px] max-[900px]:grid-cols-2 max-[560px]:grid-cols-1">
       {
-        steps.map((step, index) => (
-          <div class="rounded-xl border border-slate-200 bg-white p-6">
-            <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-indigo-50 text-sm font-semibold text-indigo-600">
-              {index + 1}
-            </span>
-            <h3 class="mt-3 font-semibold">{step.title}</h3>
-            <p class="mt-1 text-sm text-slate-600">{step.text}</p>
-          </div>
+        DIRECTIONS.map((dir) => (
+          <a
+            href={dir.href}
+            class="relative block overflow-hidden rounded-[14px] border border-haze bg-white px-5 py-[26px] shadow-[0_10px_35px_rgba(13,71,161,0.1)] transition-all duration-[250ms] hover:-translate-y-2 hover:border-primary hover:shadow-[0_18px_40px_rgba(13,71,161,0.18)] after:absolute after:right-[18px] after:bottom-[18px] after:-translate-x-2 after:text-[0.82rem] after:font-bold after:text-primary after:opacity-0 after:transition-all after:duration-[250ms] after:content-['Смотреть_→'] hover:after:translate-x-0 hover:after:opacity-100"
+          >
+            <div class="mb-2.5 text-[13px] font-bold text-accent">{dir.num}</div>
+            <h3 class="mb-2 text-[1.12rem] font-bold text-primary-dark">{dir.label}</h3>
+            <p class="pb-[18px] text-[0.88rem] leading-[1.45] text-ink-light">{dir.text}</p>
+          </a>
         ))
       }
     </div>
+  </div>
+
+  <!-- ABOUT -->
+  <section id="about" class="scroll-mt-[110px] bg-mist py-20">
+    <div class="mx-auto max-w-[1240px] px-5">
+      <div class="section-title mb-12 text-center">
+        <span class="mb-3 inline-block text-[13px] font-bold tracking-[1.2px] text-accent uppercase">
+          О компании
+        </span>
+        <h2 class="mb-3 text-[2.1rem] font-extrabold leading-[1.2]">{SITE.name}</h2>
+        <p class="mx-auto max-w-[600px] text-[1.05rem] text-ink-light">
+          Инженерно-технический центр с опытом работы с 2007 года. Иркутск и Иркутская область.
+        </p>
+      </div>
+      <div class="about-grid grid items-center gap-12 lg:grid-cols-2">
+        <div>
+          <p class="mb-3.5 text-ink-light">
+            Мы специализируемся на комплексных решениях в области теплоэнергетики и промышленной
+            автоматизации. Выполняем полный цикл работ — от проектирования до пусконаладки и
+            сервисного обслуживания.
+          </p>
+          <p class="mb-3.5 text-ink-light">
+            Используем современное российское оборудование (включая ОВЕН и Истратех) и решения для
+            модернизации существующих объектов. Работаем с промышленностью, ЖКХ и коммерческими
+            объектами.
+          </p>
+          <div class="mt-6 grid grid-cols-2 gap-3.5">
+            <div class="feature-box rounded-xl border-l-[3px] border-l-accent bg-white p-[18px] shadow-card">
+              <strong class="mb-1 block text-[0.95rem]">СРО (Строительство)</strong>
+              <span class="text-[0.85rem] text-ink-light">
+                Допуск к работам по договорам подряда
+              </span>
+            </div>
+            <div class="feature-box rounded-xl border-l-[3px] border-l-accent bg-white p-[18px] shadow-card">
+              <strong class="mb-1 block text-[0.95rem]">СРО (Проектирование)</strong>
+              <span class="text-[0.85rem] text-ink-light">
+                Разработка проектной документации
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="rounded-2xl bg-white p-9 shadow-card">
+          <h3 class="mb-[18px] text-[1.17rem] font-bold text-primary">Ключевые направления</h3>
+          <ul class="list-none text-ink-light">
+            {
+              KEY_DIRECTIONS.map((item, i) => (
+                <li
+                  class={`py-2.5 ${i < KEY_DIRECTIONS.length - 1 ? "border-b border-haze" : ""}`}
+                >
+                  — {item}
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+      </div>
+    </div>
   </section>
+
+  <!-- CONTACTS -->
+  <section id="contacts" class="scroll-mt-[110px] py-20">
+    <div class="mx-auto max-w-[1240px] px-5">
+      <div class="section-title mb-12 text-center">
+        <span class="mb-3 inline-block text-[13px] font-bold tracking-[1.2px] text-accent uppercase">
+          Контакты
+        </span>
+        <h2 class="mb-3 text-[2.1rem] font-extrabold leading-[1.2]">Свяжитесь с нами</h2>
+        <p class="mx-auto max-w-[600px] text-[1.05rem] text-ink-light">
+          Позвоните, напишите или оставьте заявку — ответим в рабочее время.
+        </p>
+      </div>
+      <div class="mb-10 overflow-hidden rounded-card border border-haze shadow-card">
+        <iframe
+          src={SITE.mapEmbedUrl}
+          width="100%"
+          height="360"
+          loading="lazy"
+          title={`Карта: ${SITE.addressShort}`}
+          class="block h-[360px] w-full border-0"
+          allowfullscreen
+        ></iframe>
+      </div>
+      <div class="grid gap-12 lg:grid-cols-2">
+        <div class="contact-info">
+          <h3 class="mb-[22px] text-[1.35rem] font-bold text-primary">{SITE.name}</h3>
+          <div class="mb-[18px] flex items-start gap-3.5">
+            <div class="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[10px] bg-primary/10 text-primary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-5 w-5" aria-hidden="true">
+                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+              </svg>
+            </div>
+            <div>
+              <strong class="mb-[3px] block text-[0.94rem]">Адрес</strong>
+              <span class="text-[0.92rem] leading-[1.5] text-ink-light">{SITE.address}</span>
+            </div>
+          </div>
+          <div class="mb-[18px] flex items-start gap-3.5">
+            <div class="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[10px] bg-primary/10 text-primary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-5 w-5" aria-hidden="true">
+                <path
+                  d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+              </svg>
+            </div>
+            <div>
+              <strong class="mb-[3px] block text-[0.94rem]">Телефоны</strong>
+              <a href={`tel:${phoneMain.tel}`} class="text-[0.92rem] leading-[1.5] text-ink-light hover:text-primary">
+                {phoneMain.display}</a
+              >
+              <br />
+              <a href={`tel:${phoneSecond.tel}`} class="text-[0.92rem] leading-[1.5] text-ink-light hover:text-primary">
+                {phoneSecond.display}
+              </a>
+            </div>
+          </div>
+          <div class="mb-[18px] flex items-start gap-3.5">
+            <div class="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[10px] bg-primary/10 text-primary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-5 w-5" aria-hidden="true">
+                <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                <path d="m22 6-10 7L2 6"></path>
+              </svg>
+            </div>
+            <div>
+              <strong class="mb-[3px] block text-[0.94rem]">Email</strong>
+              <a href={`mailto:${SITE.email}`} class="text-[0.92rem] leading-[1.5] text-ink-light hover:text-primary">
+                {SITE.email}
+              </a>
+            </div>
+          </div>
+          <div class="mb-[18px] flex items-start gap-3.5">
+            <div class="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[10px] bg-primary/10 text-primary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-5 w-5" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+            </div>
+            <div>
+              <strong class="mb-[3px] block text-[0.94rem]">Режим работы</strong>
+              <span class="text-[0.92rem] leading-[1.5] text-ink-light">{SITE.workingHours}</span>
+            </div>
+          </div>
+        </div>
+        <div class="contact-form rounded-card border border-haze bg-white p-8 shadow-card">
+          <h3 class="mb-[18px] text-[1.25rem] font-bold">Оставить заявку</h3>
+          <form id="contact-form" novalidate>
+            <div class="mb-3.5">
+              <label class="mb-[5px] block text-[0.88rem] font-medium">Ваше имя *</label>
+              <input
+                type="text"
+                placeholder="Иван Иванов"
+                class="w-full rounded-lg border border-[#d0d5dd] bg-[#f9fafb] px-3.5 py-3 text-[15px] transition-[border-color,box-shadow] duration-200 focus:border-primary focus:bg-white focus:shadow-[0_0_0_3px_rgba(13,71,161,0.12)] focus:outline-none"
+              />
+            </div>
+            <div class="mb-3.5">
+              <label class="mb-[5px] block text-[0.88rem] font-medium">Телефон *</label>
+              <input
+                type="tel"
+                placeholder="+7 (___) ___-__-__"
+                class="w-full rounded-lg border border-[#d0d5dd] bg-[#f9fafb] px-3.5 py-3 text-[15px] transition-[border-color,box-shadow] duration-200 focus:border-primary focus:bg-white focus:shadow-[0_0_0_3px_rgba(13,71,161,0.12)] focus:outline-none"
+              />
+            </div>
+            <div class="mb-3.5">
+              <label class="mb-[5px] block text-[0.88rem] font-medium">Email</label>
+              <input
+                type="email"
+                placeholder="email@example.com"
+                class="w-full rounded-lg border border-[#d0d5dd] bg-[#f9fafb] px-3.5 py-3 text-[15px] transition-[border-color,box-shadow] duration-200 focus:border-primary focus:bg-white focus:shadow-[0_0_0_3px_rgba(13,71,161,0.12)] focus:outline-none"
+              />
+            </div>
+            <div class="mb-3.5">
+              <label class="mb-[5px] block text-[0.88rem] font-medium">Комментарий</label>
+              <textarea
+                placeholder="Опишите задачу..."
+                class="min-h-[100px] w-full resize-y rounded-lg border border-[#d0d5dd] bg-[#f9fafb] px-3.5 py-3 text-[15px] transition-[border-color,box-shadow] duration-200 focus:border-primary focus:bg-white focus:shadow-[0_0_0_3px_rgba(13,71,161,0.12)] focus:outline-none"></textarea>
+            </div>
+            <div class="mb-3.5">
+              <label class="flex cursor-pointer items-start gap-2.5 text-[0.83rem] leading-[1.45] font-normal text-ink-light">
+                <input type="checkbox" name="agreement" class="mt-0.5 h-[17px] w-[17px] shrink-0 accent-primary" />
+                <span>
+                  Согласен на обработку персональных данных и принимаю
+                  <a href={withBase(SITE.privacyPath)} target="_blank" class="text-primary underline">
+                    политику конфиденциальности</a
+                  >
+                </span>
+              </label>
+            </div>
+            <button
+              type="submit"
+              class="inline-flex w-full items-center justify-center gap-2 rounded-btn bg-primary px-[22px] py-3 text-[15px] font-semibold whitespace-nowrap text-white transition-all duration-[250ms] hover:-translate-y-px hover:bg-primary-dark hover:shadow-lift"
+            >
+              Отправить
+            </button>
+          </form>
+          <div id="form-message" class="mt-3.5 hidden text-[0.92rem] font-medium"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCROLL TOP (the source page's duplicated buttons, collapsed to one) -->
+  <button
+    id="scroll-top"
+    type="button"
+    aria-label="Наверх"
+    data-show="false"
+    class="pointer-events-none fixed right-7 bottom-7 z-[1100] flex h-12 w-12 translate-y-4 items-center justify-center rounded-full bg-primary text-white opacity-0 shadow-[0_4px_15px_rgba(13,71,161,0.3)] transition-all duration-300 invisible data-[show=true]:pointer-events-auto data-[show=true]:visible data-[show=true]:translate-y-0 data-[show=true]:opacity-100 hover:bg-primary-dark"
+  >
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="h-[22px] w-[22px]" aria-hidden="true">
+      <line x1="12" y1="19" x2="12" y2="5"></line>
+      <polyline points="5 12 12 5 19 12"></polyline>
+    </svg>
+  </button>
+
+  <style>
+    /* Reveal-on-scroll (approved source behavior): the classes are added
+       by the script below, so content stays visible without JS. */
+    .section-reveal {
+      opacity: 0;
+      transform: translateY(22px);
+      transition:
+        opacity 0.6s ease,
+        transform 0.6s ease;
+    }
+    .section-reveal.visible {
+      opacity: 1;
+      transform: none;
+    }
+  </style>
+
+  <script is:inline>
+    // Count-up of the hero stats (approved source behavior): the numbers
+    // tick from 0 to their data-target when they enter the viewport; the
+    // years-on-market figure gains the «+» as in the source.
+    function countUp(el) {
+      const target = +el.dataset.target;
+      if (!target) return;
+      const duration = 1400;
+      const t0 = performance.now();
+      (function tick(now) {
+        const p = Math.min((now - t0) / duration, 1);
+        const eased = 1 - Math.pow(1 - p, 3);
+        el.textContent = Math.round(target * eased) + (target === 19 ? "+" : "");
+        if (p < 1) requestAnimationFrame(tick);
+      })(t0);
+    }
+    const statNumbers = document.querySelectorAll(".stat-card .number[data-target]");
+    const statIO = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((en) => {
+          if (en.isIntersecting) {
+            countUp(en.target);
+            statIO.unobserve(en.target);
+          }
+        });
+      },
+      { threshold: 0.5 },
+    );
+    statNumbers.forEach((el) => statIO.observe(el));
+
+    // Reveal-on-scroll for the content blocks, staggered as in the source.
+    const revealTargets = document.querySelectorAll(
+      ".section-title, .feature-box, .about-grid > div, .contact-info, .contact-form",
+    );
+    revealTargets.forEach((el, i) => {
+      el.classList.add("section-reveal");
+      el.style.transitionDelay = (i % 4) * 60 + "ms";
+    });
+    const revealIO = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((en) => {
+          if (en.isIntersecting) {
+            en.target.classList.add("visible");
+            revealIO.unobserve(en.target);
+          }
+        });
+      },
+      { threshold: 0.12 },
+    );
+    revealTargets.forEach((el) => revealIO.observe(el));
+
+    // Scroll top: shows past 300px, as the source's kept binding.
+    const scrollTopBtn = document.getElementById("scroll-top");
+    function syncScrollTop() {
+      scrollTopBtn.dataset.show = String(window.scrollY > 300);
+    }
+    window.addEventListener("scroll", syncScrollTop, { passive: true });
+    scrollTopBtn.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+    syncScrollTop();
+
+    // Contact form: the approved validation and success message. The
+    // submitter is a stub (Spec #4 decision 2, ADR 0021) — the source's
+    // Web3Forms call is stripped; where requests land is wayfinder
+    // territory.
+    const form = document.getElementById("contact-form");
+    const msg = document.getElementById("form-message");
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const errors = [];
+      if (!form.querySelector('input[type="text"]').value.trim()) errors.push("имя");
+      const hasPhone = form.querySelector('input[type="tel"]').value.trim();
+      const hasEmail = form.querySelector('input[type="email"]').value.trim();
+      if (!hasPhone && !hasEmail) errors.push("телефон или email");
+      if (!form.querySelector('input[type="checkbox"]').checked)
+        errors.push("согласие на обработку данных");
+      msg.style.display = "block";
+      if (errors.length) {
+        msg.style.color = "#c62828";
+        msg.textContent = "Заполните: " + errors.join(", ");
+        return;
+      }
+      msg.style.color = "#2e7d32";
+      msg.textContent = "Заявка отправлена! Мы свяжемся с вами.";
+      form.reset();
+    });
+  </script>
 </Base>

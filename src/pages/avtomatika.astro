@@ -1,0 +1,45 @@
+---
+import Base from "../layouts/Base.astro";
+import ScrollTop from "../components/ScrollTop.astro";
+import { withBase } from "../lib/urls";
+
+/**
+ * Автоматика (Spec #4, T4): the approved avtomatika.html page as a
+ * content shell. The category has no product data yet (Spec decision —
+ * the source's single automatika position is junk and stays out), so
+ * the table area is a graceful «скоро» empty state — the source's
+ * approved empty state visual — with a заявка CTA; no toolbar, no
+ * island.
+ */
+---
+<Base
+  title="Автоматика — ООО ИТЦ «Альтер Энерго»"
+  description="Контроллеры, ПЛК, КИПиА и шкафы управления ОВЕН. Каталог готовится — оставьте заявку, подберём оборудование под задачу."
+>
+  <section class="bg-primary pt-[44px] pb-9 text-white">
+    <div class="mx-auto max-w-[1240px] px-5">
+      <h1 class="mb-2 text-[2rem] leading-tight font-extrabold">Автоматика</h1>
+      <p class="max-w-[560px] text-[1.02rem] text-white/90">
+        Контроллеры, ПЛК, КИПиА и шкафы управления.
+      </p>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-[1240px] px-5 py-9 pb-10">
+    <div class="rounded-card border border-dashed border-[#c5cdd8] bg-white px-[30px] py-10 text-center">
+      <h3 class="mb-2.5 text-[1.2rem] font-bold text-ink">Каталог скоро появится</h3>
+      <p class="text-ink-light">
+        Позиции этого раздела готовятся к публикации. Оставьте заявку или позвоните нам —
+        подберём оборудование под задачу.
+      </p>
+      <a
+        href={withBase("order/")}
+        class="mt-5 inline-flex items-center justify-center rounded-btn bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-dark hover:shadow-lift"
+      >
+        Оставить заявку
+      </a>
+    </div>
+  </section>
+
+  <ScrollTop />
+</Base>
