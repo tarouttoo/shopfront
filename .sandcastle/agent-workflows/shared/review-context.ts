@@ -22,6 +22,33 @@ export interface PullRequestContext {
   readonly validReplyIds: Set<string>;
 }
 
+/**
+ * The PR's review surface: `main...HEAD` (merge-base) first, `main..HEAD`
+ * as the fallback. No silent fallbacks: when the fallback also fails, the
+ * FIRST error's message propagates — its wrapped shape (command, capture
+ * limit, captured bytes) is the forensic surface for a maxBuffer overflow,
+ * while rethrowing the fallback's would bury which capture actually died.
+ */
+export const captureDiff = (): string => {
+  let firstError: Error | undefined;
+  const primary = (() => {
+    try {
+      return sh("git diff main...HEAD");
+    } catch (error) {
+      firstError = error instanceof Error ? error : new Error(String(error));
+      return "";
+    }
+  })();
+  if (primary.length > 0) {
+    return primary;
+  }
+  try {
+    return sh("git diff main..HEAD");
+  } catch (fallbackError) {
+    throw firstError ?? fallbackError;
+  }
+};
+
 export const fetchPullRequestContext = (
   prNumber: string,
 ): PullRequestContext => {
@@ -158,7 +185,7 @@ query($owner:String!,$repo:String!,$number:Int!) {
     review_threads: reviewThreads,
   };
 
-  const diff = safeSh("git diff main...HEAD") || sh("git diff main..HEAD");
+  const diff = captureDiff();
 
   return {
     prTitle: prView.title,

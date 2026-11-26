@@ -6,6 +6,7 @@ import {
   agentFromEnv,
   fail,
   required,
+  safeSh,
   sh,
   writeJson,
   writeText,
@@ -22,6 +23,16 @@ const PR_NUMBER = required("PR_NUMBER");
 const BRANCH = required("BRANCH");
 // The review's fixed point (course contract: `origin/{{BASE_REF}}`).
 const BASE_REF = process.env.BASE_REF ?? "main";
+
+// Forensics for the failure path below, measured before the diff attempt in
+// fetchPullRequestContext (which uses the same refs): if that capture
+// overflows or dies, the «Reason:» comment still says how big the diff
+// actually was — the number a stranger needs to diagnose an ENOBUFS.
+// `wc -c` pipes the diff through and emits a few bytes, so this capture
+// cannot overflow itself.
+const measured = safeSh("git diff main...HEAD | wc -c").trim();
+const parsedDiffBytes = measured === "" ? Number.NaN : Number(measured);
+const diffByteSize = Number.isFinite(parsedDiffBytes) ? parsedDiffBytes : null;
 
 try {
   const context = fetchPullRequestContext(PR_NUMBER);
@@ -85,5 +96,10 @@ try {
   console.log(`Inline comments: ${validInlineComments.length}.`);
   console.log(`Replies: ${validReplies.length}.`);
 } catch (error) {
-  fail(error instanceof Error ? error.message : String(error));
+  const message = error instanceof Error ? error.message : String(error);
+  const sizeNote =
+    diffByteSize === null
+      ? "(diff main...HEAD: size unavailable)"
+      : `(diff main...HEAD: ${diffByteSize} bytes)`;
+  fail(`${message}\n\n${sizeNote}`);
 }
