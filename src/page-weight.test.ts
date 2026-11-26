@@ -26,6 +26,11 @@ const PAGE_WEIGHT_BUDGET = {
   exceptions: [] as { route: string; ceilingKb: number; reason: string }[],
 };
 
+/** The ceiling a route answers to: its ledger row's, else the default. */
+const ceilingKbFor = (route: string) =>
+  PAGE_WEIGHT_BUDGET.exceptions.find((row) => row.route === route)
+    ?.ceilingKb ?? PAGE_WEIGHT_BUDGET.defaultCeilingKb;
+
 /**
  * The budget watches pages, not data: Astro prerenders every route as
  * `<route>/index.html`, while the JSON endpoints land as
@@ -56,18 +61,16 @@ describe("page-weight budget (built static output)", () => {
   });
 
   it("keeps every prerendered HTML page within its ceiling", () => {
+    // The report names the ceiling the route actually answers to — a
+    // ledgered page that breaches its own (bigger) row must not be
+    // told it breached the default.
     const offenders = pages
-      .filter(({ route, bytes }) => {
-        const ceiling =
-          PAGE_WEIGHT_BUDGET.exceptions.find((row) => row.route === route)
-            ?.ceilingKb ?? PAGE_WEIGHT_BUDGET.defaultCeilingKb;
-        return bytes > ceiling * 1024;
-      })
+      .filter(({ route, bytes }) => bytes > ceilingKbFor(route) * 1024)
       .map(
         ({ route, bytes }) =>
-          `${route}: ${(bytes / 1024).toFixed(0)} KB (ceiling ${
-            PAGE_WEIGHT_BUDGET.defaultCeilingKb
-          } KB)`,
+          `${route}: ${(bytes / 1024).toFixed(0)} KB (ceiling ${ceilingKbFor(
+            route,
+          )} KB)`,
       );
     expect(offenders).toEqual([]);
   });
