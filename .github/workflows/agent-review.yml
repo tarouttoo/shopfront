@@ -112,7 +112,16 @@ jobs:
         if: success()
         env:
           PAYLOAD: ${{ runner.temp }}/review_payload.json
-        run: gh api --method POST "repos/{owner}/{repo}/pulls/${PR_NUMBER}/reviews" --input "$PAYLOAD"
+        run: |
+          # The prompts dictate $GITHUB_* template links; publish the run's
+          # real values (same substitution as Agent Implement's "Open draft
+          # PR" — PR #14's review verdict shipped a dead one).
+          sed -i \
+            -e "s|\$GITHUB_SERVER_URL|$GITHUB_SERVER_URL|g" \
+            -e "s|\$GITHUB_REPOSITORY|$GITHUB_REPOSITORY|g" \
+            -e "s|\$GITHUB_RUN_ID|$GITHUB_RUN_ID|g" \
+            "$PAYLOAD"
+          gh api --method POST "repos/{owner}/{repo}/pulls/${PR_NUMBER}/reviews" --input "$PAYLOAD"
 
       - name: Mark PR ready
         if: success()

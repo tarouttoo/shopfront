@@ -14,6 +14,10 @@ const IMPLEMENT_PR_WORKFLOW_PATH = new URL(
   "../../../.github/workflows/agent-implement-pr.yml",
   import.meta.url,
 );
+const REVIEW_WORKFLOW_PATH = new URL(
+  "../../../.github/workflows/agent-review.yml",
+  import.meta.url,
+);
 
 const OPEN_DRAFT_PR_STEP = "Open draft PR";
 const PREFLIGHT_STEP = "Preflight repo settings";
@@ -51,7 +55,13 @@ interface StepResult {
 const runStep = async (
   script: string,
   ghStub: string,
-  options: { prBody?: string } = {},
+  options: {
+    prBody?: string;
+    /** Extra files written into the step's working directory. */
+    files?: Record<string, string>;
+    /** Extra step env, mirroring the workflow's `env:` block. */
+    env?: Record<string, string>;
+  } = {},
 ): Promise<StepResult> => {
   const dir = await mkdtemp(join(tmpdir(), "open-draft-pr-"));
   try {
@@ -65,6 +75,9 @@ const runStep = async (
     const githubOutput = join(dir, "github-output.txt");
     const prBodyFile = join(dir, "pr-body.md");
     await writeFile(prBodyFile, options.prBody ?? "Closes #11\n");
+    for (const [name, content] of Object.entries(options.files ?? {})) {
+      await writeFile(join(dir, name), content);
+    }
     const { status, stdout, stderr } = spawnSync(
       "bash",
       ["--noprofile", "--norc", "-e", scriptPath],
@@ -85,6 +98,7 @@ const runStep = async (
           GITHUB_SERVER_URL: "https://github.com",
           GITHUB_REPOSITORY: "octo/repo",
           GITHUB_RUN_ID: "12345",
+          ...options.env,
         },
       },
     );
@@ -196,13 +210,44 @@ describe("Preflight repo settings step", () => {
     expect(result.stdout).toContain("can_approve_pull_request_reviews=true");
   });
 
-  it("fails with the fix command when auto-merge is off (ADR 0011)", async () => {
+  it("fails with the fix command when Actions cannot create pull requests", async () => {
+    const result = await runStep(
+      runScriptOf(PREFLIGHT_STEP),
+      settingsStub(false, true),
+    );
+    expect(result.status).not.toBe(0);
+    expect(result.stdout).toContain("can_approve_pull_request_reviews=true");
+    // The PUT silently resets default_workflow_permissions; the fix
+    // command the log hands the debugging agent must set it explicitly.
+    expect(result.stdout).toContain("default_workflow_permissions=read");
+  });
+
+  it("warns but passes when auto-merge is off (ADR 0011 kill switch)", async () => {
+    // Auto-merge is the human's kill switch, and v2-chain Ticket runs ship
+    // no PR and never request it — a warning, not a blocker.
     const result = await runStep(
       runScriptOf(PREFLIGHT_STEP),
       settingsStub(true, false),
     );
-    expect(result.status).not.toBe(0);
-    expect(result.stdout).toContain("allow_auto_merge=true");
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("allow_auto_merge is off");
+  });
+
+  it("warns but passes when the settings endpoints are unreadable (GITHUB_TOKEN 403)", async () => {
+    // /actions/permissions/workflow needs Administration:read, which
+    // GITHUB_TOKEN never holds — verified live by the PR #13 review. A
+    // setting that cannot be verified must not block the run.
+    const result = await runStep(
+      runScriptOf(PREFLIGHT_STEP),
+      `
+        case "$*" in
+          *permissions/workflow*) echo "gh: Resource not accessible by integration" >&2; exit 1;;
+          *) echo true; exit 0;;
+        esac
+      `,
+    );
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("skipping the can-approve check");
   });
 });
 
@@ -234,5 +279,35 @@ describe("Update PR body step (agent-implement-pr.yml)", () => {
       { prBody: "" },
     );
     expect(result.status).toBe(0);
+  });
+});
+
+describe("Post PR review step", () => {
+  it("substitutes GitHub template variables in the review payload", async () => {
+    // The review prompts dictate $GITHUB_* template links; PR #14's verdict
+    // shipped a dead one. The step must publish the run's real values.
+    const result = await runStep(
+      runScriptOf("Post PR review", REVIEW_WORKFLOW_PATH),
+      `
+        prev=""
+        for a in "$@"; do
+          if [ "$prev" = "--input" ]; then cat "$a" >&2; fi
+          prev="$a"
+        done
+        exit 0
+      `,
+      {
+        files: {
+          "review_payload.json":
+            '{"body":"run page: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID","inlineComments":[]}',
+        },
+        env: { PAYLOAD: "review_payload.json" },
+      },
+    );
+    expect(result.status).toBe(0);
+    expect(result.stderr).toContain(
+      "https://github.com/octo/repo/actions/runs/12345",
+    );
+    expect(result.stderr).not.toContain("$GITHUB_SERVER_URL");
   });
 });

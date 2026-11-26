@@ -96,20 +96,32 @@ jobs:
         # requests"). Check the settings the pipeline needs while it is
         # still cheap; the fix commands land in the log the debugging
         # agent reads.
+        #
+        # The settings endpoints need Administration:read, which
+        # GITHUB_TOKEN never holds — read with AGENT_PAT when present and
+        # treat an unreadable endpoint as a loud warning, never a failure:
+        # a definitive "false" blocks the run, an unverifiable setting
+        # must not (PR #13 review finding; verified 403 from a ghs_ token).
+        # allow_auto_merge stays a warning too: ADR 0011's auto-merge is
+        # the human's kill switch, and v2-chain Ticket runs ship no PR and
+        # never request it.
         if: steps.shape.outputs.route == 'implement' && steps.preflight.outputs.refused != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.AGENT_PAT || secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          can_approve=$(gh api "repos/${GH_REPO}/actions/permissions/workflow" --jq '.can_approve_pull_request_reviews')
-          if [ "$can_approve" != "true" ]; then
-            echo "::error::GitHub Actions cannot create pull requests on ${GH_REPO}; 'Open draft PR' would fail after a full agent run. Fix:"
-            echo "::error::gh api -X PUT repos/${GH_REPO}/actions/permissions/workflow -F can_approve_pull_request_reviews=true"
+          if ! can_approve=$(gh api "repos/${GH_REPO}/actions/permissions/workflow" --jq '.can_approve_pull_request_reviews' 2>/dev/null); then
+            echo "::warning::Cannot read the workflow-permissions setting on ${GH_REPO} (token lacks Administration:read); skipping the can-approve check."
+          elif [ "$can_approve" != "true" ]; then
+            echo "::error::GitHub Actions cannot create pull requests on ${GH_REPO}; 'Open draft PR' would fail after a full agent run. Fix (the PUT resets default_workflow_permissions — set it explicitly):"
+            echo "::error::gh api -X PUT repos/${GH_REPO}/actions/permissions/workflow -F can_approve_pull_request_reviews=true -F default_workflow_permissions=read"
             exit 1
           fi
-          allow_auto_merge=$(gh api "repos/${GH_REPO}" --jq '.allow_auto_merge')
-          if [ "$allow_auto_merge" != "true" ]; then
-            echo "::error::allow_auto_merge is off; auto-merge (ADR 0011) needs it. Fix:"
-            echo "::error::gh api -X PATCH repos/${GH_REPO} -F allow_auto_merge=true"
-            exit 1
+          if ! allow_auto_merge=$(gh api "repos/${GH_REPO}" --jq '.allow_auto_merge' 2>/dev/null); then
+            echo "::warning::Cannot read allow_auto_merge on ${GH_REPO}; skipping that check."
+          elif [ "$allow_auto_merge" != "true" ]; then
+            echo "::warning::allow_auto_merge is off on ${GH_REPO}; auto-merge requests (ADR 0011) will hold PRs until enabled:"
+            echo "::warning::gh api -X PATCH repos/${GH_REPO} -F allow_auto_merge=true"
           fi
 
       - name: Refuse existing PR
