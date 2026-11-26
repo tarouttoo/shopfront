@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { beforeAll, describe, expect, it } from "vitest";
 import { SITE } from "./data/site";
 
@@ -61,11 +61,19 @@ describe("base layout (built static output)", () => {
   });
 
   it("links the agreed routes from the header nav", () => {
-    for (const route of ["catalog", "nasosy", "kotly", "gorelki", "avtomatika", "services"]) {
+    for (const route of ["nasosy", "kotly", "gorelki", "avtomatika", "services"]) {
       expect(shell).toContain(`href="/shopfront/${route}/"`);
     }
     expect(shell).toContain(`href="/shopfront/order/"`);
     expect(shell).toContain("Оставить заявку");
+    // The aggregate /catalog page is removed (ADR 0024): the approved
+    // design has no catalog tab — neither the header nor the footer
+    // (they share one NAV) may link to it.
+    expect(shell).not.toContain(`href="/shopfront/catalog/"`);
+  });
+
+  it("builds no /catalog route (ADR 0024)", () => {
+    expect(existsSync(new URL("../dist/catalog/index.html", import.meta.url))).toBe(false);
   });
 
   it("speaks GLOSSARY vocabulary in the shell — заявка, never заказ", () => {
@@ -87,7 +95,7 @@ describe("base layout (built static output)", () => {
   });
 
   it("renders every existing page inside the same shell", () => {
-    for (const page of ["catalog", "order", "services", "privacy"]) {
+    for (const page of ["order", "services", "privacy"]) {
       const built = readFileSync(
         new URL(`../dist/${page}/index.html`, import.meta.url),
         "utf8",

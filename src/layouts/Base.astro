@@ -18,9 +18,9 @@ const [phoneMain, phoneSecond] = SITE.phones;
 
 // Approved navigation (Spec #4, T1): the agreed routes. The Category
 // and Services pages may not exist yet (later tickets) — link to them
-// regardless.
+// regardless. No aggregate /catalog tab: the approved design has none,
+// the page is removed (ADR 0024).
 const NAV = [
-  { href: "catalog/", label: "Каталог" },
   { href: "nasosy/", label: "Насосы" },
   { href: "kotly/", label: "Котлы" },
   { href: "gorelki/", label: "Горелки" },

@@ -103,8 +103,11 @@ export default function OrderForm() {
         >
           Заявка принята
         </button>
+        {/* The aggregate /catalog page is removed (ADR 0024); the
+            catalog surface is the category pages — nasosy carries the
+            product table. */}
         <a
-          href={withBase("catalog/")}
+          href={withBase("nasosy/")}
           className="mt-3 inline-block rounded-btn border border-primary px-3.5 py-2 text-sm font-semibold text-primary hover:bg-primary hover:text-white"
         >
           Вернуться в каталог
@@ -121,7 +124,7 @@ export default function OrderForm() {
           Добавьте позиции из каталога — заявка соберётся автоматически.
         </p>
         <a
-          href={withBase("catalog/")}
+          href={withBase("nasosy/")}
           className="mt-4 inline-block rounded-btn bg-primary px-3.5 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark"
         >
           Перейти в каталог
