@@ -12,9 +12,11 @@ import { withBase } from "./urls";
  */
 
 /** Narrow the fetched payload to Products or reject it entirely. Record
- *  validation is the Product contract's job (ADR 0024: catalog.ts
- *  carries it) — each record parses through parseProduct with this
- *  adapter's prefix and the asset's Category. */
+ *  validation is the Product contract's job — parseProduct, defined
+ *  payload-free in product.ts (the client-safe import target: catalog.ts
+ *  carries the contract, ADR 0024, but holds the payload, so a runtime
+ *  import from here would ship the Catalog to visitors). Each record
+ *  parses with this adapter's prefix and the asset's Category. */
 export function parseCategoryProducts(parsed: unknown, category: CategoryId): Product[] {
   if (!Array.isArray(parsed)) {
     throw new Error("category JSON: expected an array");

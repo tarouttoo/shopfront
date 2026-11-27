@@ -6,9 +6,11 @@ import { parseCategoryProducts, parsePopulatedCategories } from "./catalogClient
  * The per-category JSON asset crosses an untyped boundary (fetch), so a
  * malformed payload rejects the whole load instead of rendering broken
  * rows (CODING_STANDARDS). Record validation is the Product contract's
- * job (parseProduct in catalog.ts, pinned in catalog.test.ts) — this
- * suite pins only the adapter's own behavior: the array check, the
- * delegation, and the adapter's `category JSON [i]` error prefix.
+ * job (parseProduct, defined payload-free in product.ts — the module a
+ * client-side adapter imports; catalog.test.ts pins it through the
+ * catalog.ts re-export) — this suite pins only the adapter's own
+ * behavior: the array check, the delegation, and the adapter's
+ * `category JSON [i]` error prefix.
  */
 describe("parseCategoryProducts (client-side category JSON)", () => {
   const valid = [
