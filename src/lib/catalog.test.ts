@@ -5,10 +5,126 @@ import {
   categoryLabel,
   findProduct,
   isPopulatedCategory,
+  parseProduct,
   populatedCategories,
 } from "./catalog";
 
-describe("catalog data contract", () => {
+/** A record the contract accepts — the fixtures below mutate one field. */
+const goodRecord = {
+  sku: "1",
+  name: "BM 1-2A A-D-E-HQQE",
+  category: "nasosy",
+  description: "Вертикальный многоступенчатый насос",
+  specs: [{ label: "Серия", value: "BM 1" }],
+};
+
+/**
+ * THE Product data contract (GLOSSARY: Товар), pinned once here through
+ * parseProduct — the one validator both adapters delegate to (the
+ * build-time catalog.json import and the client-side per-category asset
+ * fetch). A violation is a rejection, never a default; `where` prefixes
+ * every error so the failing position is named.
+ */
+describe("parseProduct (the Product data contract)", () => {
+  it("returns the Product for a well-formed record", () => {
+    expect(parseProduct(goodRecord, "catalog.json[0]")).toEqual(goodRecord);
+  });
+
+  it("rejects a record that is not an object", () => {
+    expect(() => parseProduct("BM 1", "catalog.json[3]")).toThrow(
+      "catalog.json[3]: expected an object",
+    );
+    expect(() => parseProduct(null, "catalog.json[3]")).toThrow(
+      "catalog.json[3]: expected an object",
+    );
+  });
+
+  it("rejects a missing or empty sku", () => {
+    expect(() => parseProduct({ ...goodRecord, sku: undefined }, "catalog.json[3]")).toThrow(
+      'catalog.json[3]: "sku" must be a non-empty string',
+    );
+    expect(() => parseProduct({ ...goodRecord, sku: "" }, "catalog.json[3]")).toThrow(
+      'catalog.json[3]: "sku" must be a non-empty string',
+    );
+  });
+
+  it("rejects a missing or empty name", () => {
+    expect(() => parseProduct({ ...goodRecord, name: "" }, "catalog.json[3]")).toThrow(
+      'catalog.json[3]: "name" must be a non-empty string',
+    );
+    expect(() => parseProduct({ ...goodRecord, name: 42 }, "catalog.json[3]")).toThrow(
+      'catalog.json[3]: "name" must be a non-empty string',
+    );
+  });
+
+  it("full-catalog mode: the category must be a known CategoryId", () => {
+    for (const { id } of CATEGORIES) {
+      expect(parseProduct({ ...goodRecord, category: id }, "catalog.json[3]")).toMatchObject({
+        category: id,
+      });
+    }
+    expect(() => parseProduct({ ...goodRecord, category: "nobody" }, "catalog.json[3]")).toThrow(
+      'catalog.json[3]: unknown category "nobody"',
+    );
+  });
+
+  it("per-category mode: the record's category must equal expectedCategory", () => {
+    expect(
+      parseProduct({ ...goodRecord, category: "nasosy" }, "category JSON [5]", "nasosy"),
+    ).toMatchObject({ category: "nasosy" });
+    expect(() =>
+      parseProduct({ ...goodRecord, category: "kotly" }, "category JSON [5]", "nasosy"),
+    ).toThrow('category JSON [5]: "category" must be "nasosy"');
+    // A non-string category fails the same equality — there is no
+    // "unknown category" escape from the per-category asset.
+    expect(() => parseProduct({ ...goodRecord, category: 42 }, "category JSON [5]", "nasosy")).toThrow(
+      'category JSON [5]: "category" must be "nasosy"',
+    );
+  });
+
+  it("rejects a non-string description", () => {
+    expect(() => parseProduct({ ...goodRecord, description: 42 }, "catalog.json[3]")).toThrow(
+      'catalog.json[3]: "description" must be a string',
+    );
+  });
+
+  it("rejects specs that are not an array", () => {
+    expect(() => parseProduct({ ...goodRecord, specs: "Серия: BM 1" }, "catalog.json[3]")).toThrow(
+      'catalog.json[3]: "specs" must be an array',
+    );
+    expect(() => parseProduct({ ...goodRecord, specs: undefined }, "catalog.json[3]")).toThrow(
+      'catalog.json[3]: "specs" must be an array',
+    );
+  });
+
+  it("rejects a spec entry that is not an object", () => {
+    expect(() =>
+      parseProduct({ ...goodRecord, specs: [{ label: "Серия", value: "BM 1" }, "BM 1"] }, "catalog.json[3]"),
+    ).toThrow('catalog.json[3].specs[1]: expected an object');
+  });
+
+  it("rejects a spec pair with a non-string label or value", () => {
+    expect(() =>
+      parseProduct({ ...goodRecord, specs: [{ label: "Серия", value: 1 }] }, "catalog.json[3]"),
+    ).toThrow('catalog.json[3].specs[0]: "label" and "value" must be strings');
+    expect(() =>
+      parseProduct({ ...goodRecord, specs: [{ label: 1, value: "BM 1" }] }, "catalog.json[3]"),
+    ).toThrow('catalog.json[3].specs[0]: "label" and "value" must be strings');
+  });
+
+  it("keeps only the string label/value pairs and the typed category", () => {
+    // Extra keys on the record or on a spec entry are dropped: the
+    // contract's shape is exactly Product.
+    expect(
+      parseProduct(
+        { ...goodRecord, extra: "junk", specs: [{ label: "Серия", value: "BM 1", junk: true }] },
+        "catalog.json[3]",
+      ),
+    ).toEqual({ ...goodRecord, specs: [{ label: "Серия", value: "BM 1" }] });
+  });
+});
+
+describe("catalog data contract (PRODUCTS built through parseProduct)", () => {
   it("loads every Product with a unique SKU", () => {
     const skus = PRODUCTS.map((product) => product.sku);
     expect(skus.length).toBeGreaterThan(0);

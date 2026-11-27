@@ -6,8 +6,9 @@ import { CATEGORIES, type CategoryId } from "./categories";
  * static HTML. A required key's absence is a rejection, not a default —
  * a broken catalog must fail the build, not silently render empty cards.
  *
- * This module carries the payload (all positions), so client modules
- * must not import it at runtime: the Category facts they need (ids and
+ * This module carries the payload (all positions) and the Product
+ * data contract they are parsed with, so client modules must not
+ * import its payload at runtime: the Category facts they need (ids and
  * labels) live in categories.ts, and the one derived fact they read —
  * which Categories are populated — ships as the build-time
  * `data/populated-categories.json` asset. Re-exports keep the public
@@ -48,8 +49,19 @@ export function populatedCategories(): CategoryId[] {
   return CATEGORIES.filter(({ id }) => isPopulatedCategory(id)).map(({ id }) => id);
 }
 
-function assertProduct(raw: unknown, index: number): Product {
-  const where = `catalog.json[${index}]`;
+/**
+ * Parse one raw JSON record into a Product or throw. `where` prefixes
+ * every error (e.g. "catalog.json[3]", "category JSON [5]"). With
+ * expectedCategory the record's category must equal it (per-category
+ * asset); without it, the category must be a known CategoryId
+ * (full-catalog validation). A violation is a rejection, never a
+ * default — the data contract's stated behavior.
+ */
+export function parseProduct(
+  raw: unknown,
+  where: string,
+  expectedCategory?: CategoryId,
+): Product {
   if (typeof raw !== "object" || raw === null) {
     throw new Error(`${where}: expected an object`);
   }
@@ -63,8 +75,14 @@ function assertProduct(raw: unknown, index: number): Product {
     throw new Error(`${where}: "name" must be a non-empty string`);
   }
   const category = record.category;
-  if (typeof category !== "string" || !CATEGORIES.some((c) => c.id === category)) {
-    throw new Error(`${where}: unknown category "${String(category)}"`);
+  if (expectedCategory === undefined) {
+    // Full-catalog validation: any known CategoryId is accepted.
+    if (typeof category !== "string" || !CATEGORIES.some((c) => c.id === category)) {
+      throw new Error(`${where}: unknown category "${String(category)}"`);
+    }
+  } else if (category !== expectedCategory) {
+    // Per-category asset: the record belongs to exactly one Category.
+    throw new Error(`${where}: "category" must be "${expectedCategory}"`);
   }
   const description = record.description;
   if (typeof description !== "string") {
@@ -77,6 +95,8 @@ function assertProduct(raw: unknown, index: number): Product {
   return {
     sku,
     name,
+    // The guards above proved category is a valid CategoryId (known, or
+    // equal to the expected one) — not a fallback.
     category: category as CategoryId,
     description,
     specs: specs.map((spec, specIndex) => {
@@ -93,7 +113,9 @@ function assertProduct(raw: unknown, index: number): Product {
   };
 }
 
-export const PRODUCTS: Product[] = catalogJson.map(assertProduct);
+export const PRODUCTS: Product[] = catalogJson.map((raw, index) =>
+  parseProduct(raw, `catalog.json[${index}]`),
+);
 
 export function findProduct(sku: string): Product | undefined {
   return PRODUCTS.find((product) => product.sku === sku);
