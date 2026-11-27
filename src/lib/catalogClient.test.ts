@@ -4,9 +4,11 @@ import { parseCategoryProducts, parsePopulatedCategories } from "./catalogClient
 
 /**
  * The per-category JSON asset crosses an untyped boundary (fetch), so a
- * malformed record rejects the whole load instead of rendering broken
- * rows (CODING_STANDARDS: a required key's absence is a rejection, not
- * a default).
+ * malformed payload rejects the whole load instead of rendering broken
+ * rows (CODING_STANDARDS). Record validation is the Product contract's
+ * job (parseProduct in catalog.ts, pinned in catalog.test.ts) — this
+ * suite pins only the adapter's own behavior: the array check, the
+ * delegation, and the adapter's `category JSON [i]` error prefix.
  */
 describe("parseCategoryProducts (client-side category JSON)", () => {
   const valid = [
@@ -35,23 +37,11 @@ describe("parseCategoryProducts (client-side category JSON)", () => {
     expect(() => parseCategoryProducts({ lines: [] }, "nasosy")).toThrow(/array/);
   });
 
-  it("rejects a record without a sku or a name", () => {
-    expect(() => parseCategoryProducts([{ name: "x" }], "nasosy")).toThrow(/\[0\].*"sku"/);
-    expect(() => parseCategoryProducts([{ sku: "1" }], "nasosy")).toThrow(/\[0\].*"name"/);
-  });
-
-  it("rejects a record with malformed specs", () => {
-    expect(() =>
-      parseCategoryProducts(
-        [{ sku: "1", name: "x", category: "nasosy", description: "d", specs: "Серия: BM 1" }],
-        "nasosy",
-      ),
-    ).toThrow(/"specs"/);
-  });
-
-  it("rejects a record pointing at another category", () => {
-    expect(() => parseCategoryProducts([{ ...valid[0], category: "kotly" }], "nasosy")).toThrow(
-      /category/,
+  it("delegates record validation to the Product contract — a malformed record rejects with the adapter's prefix", () => {
+    // The field rule behind this rejection ("sku") is pinned once in
+    // catalog.test.ts; here only the adapter's prefix is pinned.
+    expect(() => parseCategoryProducts([{ name: "x" }], "nasosy")).toThrow(
+      /category JSON \[0\]/,
     );
   });
 });
