@@ -9,7 +9,8 @@ name: Agent Improve Architecture
 # Improvements always wait for a human: nothing here adds
 # `ready-for-agent` or `agent:explore` — a human reviews the issues and
 # drives them into the pipeline themselves (label `agent:implement`, or
-# `spec` + `agent:implement` to have to-tickets decompose them).
+# `spec` + `agent:implement` to run the whole spec as one pass
+# (ADR 0028).
 #
 # There is no subject issue to relabel, so a failed run just fails loudly
 # in Actions (with a failure summary); rerun the button.

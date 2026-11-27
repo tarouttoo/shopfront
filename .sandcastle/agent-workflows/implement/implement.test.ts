@@ -15,6 +15,7 @@ const workflow = readFileSync(
 );
 const script = readFileSync(path.join(import.meta.dirname, "implement.ts"), "utf8");
 const prompt = readFileSync(path.join(import.meta.dirname, "prompt.md"), "utf8");
+const specPrompt = readFileSync(path.join(import.meta.dirname, "prompt-spec.md"), "utf8");
 
 describe("implement preflight (Detect issue shape)", () => {
   it("routes by issue shape instead of refusing PRD-shaped issues (ADR 0019, delta №1)", () => {
@@ -24,9 +25,35 @@ describe("implement preflight (Detect issue shape)", () => {
       workflow.indexOf("Preflight existing PR"),
     );
     expect(shapeStep).toContain('route="spec-explore"');
-    expect(shapeStep).toContain('route="to-tickets"');
     expect(shapeStep).toContain('route="implement"');
     expect(shapeStep).toContain('== "spec"');
+  });
+
+  it("runs a Spec marked agent:implement as one implement pass (ADR 0028)", () => {
+    const shapeStep = workflow.slice(
+      workflow.indexOf("Detect issue shape"),
+      workflow.indexOf("Preflight existing PR"),
+    );
+    // The spec check wins over sub_count: a re-run spec with Tickets still
+    // implements — the Tickets are the record, not separate work orders.
+    const firstBranch = shapeStep.slice(
+      shapeStep.indexOf('if [ "$has_spec_label"'),
+      shapeStep.indexOf("elif"),
+    );
+    expect(firstBranch).toContain('route="implement"');
+    expect(firstBranch).toContain("spec_run=true");
+    const runStep = workflow.slice(workflow.indexOf("Run implementation agent"));
+    const stepBody = runStep.slice(0, runStep.indexOf("- name:", 1));
+    expect(stepBody).toContain("SPEC_RUN: ${{ steps.shape.outputs.spec_run }}");
+    expect(script).toContain("prompt-spec.md");
+    expect(script).toContain("SPEC_RUN");
+  });
+
+  it("the spec-run prompt records the plan as Tickets and closes them as scope lands", () => {
+    expect(specPrompt).toContain("--parent {{ISSUE_NUMBER}}");
+    expect(specPrompt).toContain("gh issue close");
+    expect(specPrompt).toContain("Closes #{{ISSUE_NUMBER}}");
+    expect(specPrompt).toContain("Tickets carry no labels");
   });
 
   it("keeps the spec-explore route out of the implement pass", () => {
@@ -35,13 +62,16 @@ describe("implement preflight (Detect issue shape)", () => {
     expect(stepBody).toContain("steps.shape.outputs.route == 'implement'");
   });
 
-  it("runs the spec routes as their own steps", () => {
-    expect(workflow).toContain("to-tickets/to-tickets.ts");
+  it("retires the to-tickets route: the spec run decomposes itself (ADR 0028)", () => {
+    expect(workflow).not.toContain("to-tickets/to-tickets.ts");
+    expect(workflow).not.toContain("route == 'to-tickets'");
+  });
+
+  it("keeps the exploration-notes route for a non-Spec issue with sub-issues", () => {
     expect(workflow).toContain("spec-explore/spec-explore.ts");
-    const toTickets = workflow.slice(workflow.indexOf("Run to-tickets runner"));
-    const stepBody = toTickets.slice(0, toTickets.indexOf("- name:", 1));
-    expect(stepBody).toContain("steps.shape.outputs.route == 'to-tickets'");
-    expect(stepBody).toContain("AGENT_PAT: ${{ secrets.AGENT_PAT }}");
+    const specExplore = workflow.slice(workflow.indexOf("Run spec-explore runner"));
+    const stepBody = specExplore.slice(0, specExplore.indexOf("- name:", 1));
+    expect(stepBody).toContain("steps.shape.outputs.route == 'spec-explore'");
   });
 
   it("posts the exploration comment with the marker implement runners look up", () => {

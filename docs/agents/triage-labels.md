@@ -6,7 +6,7 @@ The skills speak in terms of five canonical triage roles. This file maps those r
 | -------------------------- | --------------------------- | ---------------------------------------- |
 | `needs-triage`             | `agent:explore`             | Maintainer needs to evaluate this issue  |
 | `needs-info`               | `agent:blocked`             | Waiting on reporter for more information |
-| `ready-for-agent`          | `ready-for-agent`           | Fully specified, waiting on blockers; the converter (`agent-convert.yml`) swaps it for `agent:implement` when the last blocker closes |
+| `ready-for-agent`          | `ready-for-agent`           | Fully specified, waiting on blockers; the converter (`agent-convert.yml`) swaps it for `agent:implement` when the last blocker closes. Standalone requests only — Specs run as one implement pass (ADR 0028): put `agent:implement` on the Spec itself, and the run records its Tickets as the trace |
 | `ready-for-human`          | `ready-for-human`           | Requires human implementation            |
 | `wontfix`                  | — (close the issue instead) | Will not be actioned                     |
 

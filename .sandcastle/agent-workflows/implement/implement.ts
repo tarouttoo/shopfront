@@ -9,6 +9,9 @@ const ISSUE_TITLE = required("ISSUE_TITLE");
 const BRANCH = required("BRANCH");
 // Empty unless the shape step exported a parent issue (child-of-spec Ticket).
 const PARENT_NUMBER = process.env.PARENT_NUMBER;
+// True when the labeled issue is itself a Spec: the run implements the whole
+// Spec — Tickets are the record it creates, not separate work orders (ADR 0028).
+const SPEC_RUN = process.env.SPEC_RUN === "true";
 const PR_BODY_PATH = path.join(outputDir(), "pr-body.md");
 
 try {
@@ -70,7 +73,11 @@ try {
     logging: { type: "stdout" },
     promptFile: path.join(
       import.meta.dirname,
-      isSpecTicket ? "prompt-spec-ticket.md" : "prompt.md",
+      SPEC_RUN
+        ? "prompt-spec.md"
+        : isSpecTicket
+          ? "prompt-spec-ticket.md"
+          : "prompt.md",
     ),
     promptArgs,
   });

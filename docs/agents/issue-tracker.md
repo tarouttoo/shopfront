@@ -48,6 +48,18 @@ Create a GitHub issue.
 
 Read it as in **Read an issue** above.
 
+## Spec lifecycle (ADR 0028)
+
+A Spec runs as **one implement pass**: publish the Spec issue (label
+`spec`, settled decisions, rules, the interface contract), then add
+`agent:implement` to the Spec itself. The run creates its sub-issue
+Tickets (unlabeled, blockers wired — the trace, not work orders),
+implements the whole Spec on one branch, closes Tickets as their scope
+lands, and opens one draft PR; `agent:review` then covers the whole
+Spec once and auto-merge follows ADR `0011`/`0023`. Do not publish
+Specs as per-Ticket runs: the converter path is for standalone
+requests only.
+
 ## Wayfinding operations
 
 Used by `/wayfinder`. The **map** is a single issue with **child** issues as tickets.

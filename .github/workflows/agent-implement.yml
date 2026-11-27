@@ -61,17 +61,18 @@ jobs:
       AGENT_MODEL: glm-5.3-flash:max
       # The provider plan caps simultaneous agent runs (empirically 3: a
       # 4th and 5th died at start; the key is shared with the operator's
-      # local sessions). to-tickets validates the plan's widest wave
-      # against this.
+      # local sessions). Pinned to the shard modulus by
+      # shared/concurrency.test.ts; manual to-tickets runs read it too
+      # (ADR 0028 retired it from this workflow's routes).
       AGENT_CONCURRENCY: "3"
 
     steps:
-      # Route by issue shape (ADR 0019, delta №1): a Spec with Tickets goes
-      # to the exploration-notes runner; a ticketless Spec goes to the
-      # to-tickets runner (AFK decomposition) when marked `spec` or titled
-      # `Spec: …` (the marker is canonical, the title the safety net); an
-      # issue without sub-issues implements (its parent Spec, if any, is
-      # pulled in as context).
+      # Route by issue shape: a Spec (label `spec`, title `Spec: …` as the
+      # safety net) marked `agent:implement` runs as ONE implement pass —
+      # the run records its plan as sub-issue Tickets and lands the whole
+      # Spec on one PR (ADR 0028). A non-Spec issue with sub-issues goes to
+      # the exploration-notes runner; anything else implements directly
+      # (its parent Spec, if any, is pulled in as context).
       - name: Detect issue shape
         id: shape
         run: |
@@ -85,16 +86,20 @@ jobs:
             --jq '.data.repository.issue.parent.number // empty' 2>/dev/null || echo "")
           has_spec_label=$(gh issue view "$ISSUE_NUMBER" --json labels --jq 'any(.labels[]; .name == "spec")')
           title_is_spec=$(printf '%s' "$ISSUE_TITLE" | grep -qiE '^spec:' && echo true || echo false)
-          if [ "$sub_count" != "0" ]; then
+          if [ "$has_spec_label" = "true" ] || [ "$title_is_spec" = "true" ]; then
+            route="implement"
+            spec_run=true
+          elif [ "$sub_count" != "0" ]; then
             route="spec-explore"
-          elif [ "$has_spec_label" = "true" ] || [ "$title_is_spec" = "true" ]; then
-            route="to-tickets"
+            spec_run=false
           else
             route="implement"
+            spec_run=false
           fi
           echo "sub_count=$sub_count" >> "$GITHUB_OUTPUT"
           echo "parent_number=$parent_number" >> "$GITHUB_OUTPUT"
           echo "route=$route" >> "$GITHUB_OUTPUT"
+          echo "spec_run=$spec_run" >> "$GITHUB_OUTPUT"
 
       - name: Preflight existing PR
         if: steps.shape.outputs.route == 'implement'
@@ -221,14 +226,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y xvfb
 
-      - name: Run to-tickets runner
-        if: steps.shape.outputs.route == 'to-tickets'
-        env:
-          ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
-          AGENT_PAT: ${{ secrets.AGENT_PAT }}
-          OUTPUT_DIR: ${{ runner.temp }}
-        run: npx tsx .sandcastle/agent-workflows/to-tickets/to-tickets.ts
-
       - name: Run spec-explore runner
         if: steps.shape.outputs.route == 'spec-explore'
         env:
@@ -262,6 +259,7 @@ jobs:
           BRANCH: ${{ steps.branch.outputs.name }}
           OUTPUT_DIR: ${{ runner.temp }}
           PARENT_NUMBER: ${{ steps.shape.outputs.parent_number }}
+          SPEC_RUN: ${{ steps.shape.outputs.spec_run }}
         run: npx tsx .sandcastle/agent-workflows/implement/implement.ts
 
       - name: Upload evidence screenshots
