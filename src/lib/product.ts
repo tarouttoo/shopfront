@@ -25,6 +25,34 @@ export interface Product {
 }
 
 /**
+ * Validate the category field and return it as the typed CategoryId, so
+ * the compiler (not an assertion) carries the invariant. With
+ * expectedCategory the record's category must equal it (per-category
+ * asset: the record belongs to exactly one Category); without, it must
+ * be a known CategoryId (full-catalog validation).
+ */
+function parseCategoryField(
+  category: unknown,
+  where: string,
+  expectedCategory?: CategoryId,
+): CategoryId {
+  if (expectedCategory !== undefined) {
+    if (category !== expectedCategory) {
+      throw new Error(`${where}: "category" must be "${expectedCategory}"`);
+    }
+    return expectedCategory;
+  }
+  const known =
+    typeof category === "string"
+      ? CATEGORIES.find(({ id }) => id === category)
+      : undefined;
+  if (!known) {
+    throw new Error(`${where}: unknown category "${String(category)}"`);
+  }
+  return known.id;
+}
+
+/**
  * Parse one raw JSON record into a Product or throw. `where` prefixes
  * every error (e.g. "catalog.json[3]", "category JSON [5]"). With
  * expectedCategory the record's category must equal it (per-category
@@ -49,16 +77,7 @@ export function parseProduct(
   if (typeof name !== "string" || name.length === 0) {
     throw new Error(`${where}: "name" must be a non-empty string`);
   }
-  const category = record.category;
-  if (expectedCategory === undefined) {
-    // Full-catalog validation: any known CategoryId is accepted.
-    if (typeof category !== "string" || !CATEGORIES.some((c) => c.id === category)) {
-      throw new Error(`${where}: unknown category "${String(category)}"`);
-    }
-  } else if (category !== expectedCategory) {
-    // Per-category asset: the record belongs to exactly one Category.
-    throw new Error(`${where}: "category" must be "${expectedCategory}"`);
-  }
+  const category = parseCategoryField(record.category, where, expectedCategory);
   const description = record.description;
   if (typeof description !== "string") {
     throw new Error(`${where}: "description" must be a string`);
@@ -70,9 +89,7 @@ export function parseProduct(
   return {
     sku,
     name,
-    // The guards above proved category is a valid CategoryId (known, or
-    // equal to the expected one) — not a fallback.
-    category: category as CategoryId,
+    category,
     description,
     specs: specs.map((spec, specIndex) => {
       const specWhere = `${where}.specs[${specIndex}]`;
