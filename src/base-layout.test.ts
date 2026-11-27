@@ -23,13 +23,18 @@ describe("base layout (built static output)", () => {
     html = readFileSync(new URL("../dist/index.html", import.meta.url), "utf8");
     // The layout chrome alone: header and footer, excluding whatever
     // page content sits between them (each page asserts its own body).
+    // The prerendered CartButtons island (client:load) nests its own
+    // drawer <header>/<footer> landmarks inside the page header, so the
+    // page-level boundaries are resolved past the island's close, not
+    // from the first document-wide occurrence.
     const headerStart = html.indexOf("<header");
-    const headerEnd = html.indexOf("</header>");
-    const footerStart = html.indexOf("<footer");
-    const footerEnd = html.indexOf("</footer>");
+    const islandClose = html.indexOf("</astro-island>", headerStart);
+    const headerEnd = islandClose === -1 ? -1 : html.indexOf("</header>", islandClose);
+    const footerStart = islandClose === -1 ? -1 : html.indexOf("<footer", islandClose);
+    const footerEnd = footerStart === -1 ? -1 : html.indexOf("</footer>", footerStart);
     // Positional assertions start with presence assertions: a vanished
     // marker would turn the shell slice into a silent partial match.
-    for (const at of [headerStart, headerEnd, footerStart, footerEnd]) {
+    for (const at of [headerStart, headerEnd, footerStart, footerEnd, islandClose]) {
       expect(at).toBeGreaterThan(-1);
     }
     expect(headerEnd).toBeGreaterThan(headerStart);
@@ -74,6 +79,26 @@ describe("base layout (built static output)", () => {
 
   it("builds no /catalog route (ADR 0024)", () => {
     expect(existsSync(new URL("../dist/catalog/index.html", import.meta.url))).toBe(false);
+  });
+
+  it("prerenders the cart button into the header; the island hydrates client:load, never client:only", () => {
+    // A client:only mount leaves the justify-between header row
+    // without the button until hydration — the row visibly shifts when
+    // the island pops in (the layout shift this pin exists to catch;
+    // evidence.md: the HTML pin is what catches client:only islands
+    // swallowing static-looking chrome). The button is prerendered
+    // from the empty-Cart snapshot (CartButtons: the prerender has no
+    // localStorage — ADR 0027), so the badge is absent from the static
+    // markup; it is absolutely positioned and moves nothing when the
+    // hydrated count brings it in.
+    expect(shell).toContain('aria-label="Корзина: 0 — оформить заявку"');
+    expect(shell).toContain(">Корзина</span>");
+    // Presence before the attribute comparison (no vacuous matching on
+    // a vanished island tag).
+    const island = shell.match(/<astro-island[^>]*CartButtons[^>]*>/)?.[0] ?? "";
+    expect(island).not.toBe("");
+    expect(island).toContain('client="load"');
+    expect(island).not.toContain('client="only"');
   });
 
   it("speaks GLOSSARY vocabulary in the shell — заявка, never заказ", () => {

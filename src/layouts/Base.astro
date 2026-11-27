@@ -138,7 +138,11 @@ const NAV = [
           </a>
         </nav>
         <div class="flex shrink-0 items-center gap-3">
-          <CartButtons client:only="react" />
+          <!-- client:load — the button prerenders into the sticky
+               header (a client:only mount shifts the row when the
+               island pops in); the Cart store attaches client-side
+               (ADR 0027), the prerendered badge stays hidden. -->
+          <CartButtons client:load />
           <button
             id="menu-toggle"
             type="button"
